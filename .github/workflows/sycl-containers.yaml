@@ -27,7 +27,7 @@ permissions: read-all
 
 jobs:
   build_and_push_images:
-    if: github.repository == 'intel/llvm'
+    # if: github.repository == 'intel/llvm'
     name: Build and Push Docker Images
     runs-on: ubuntu-latest
     permissions:
