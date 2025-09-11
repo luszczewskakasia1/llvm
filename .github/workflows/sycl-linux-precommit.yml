@@ -211,8 +211,8 @@ jobs:
 
   test-perf:
     # needs: [build, detect_changes]
-    if: |
-      always()
+    if: always()
+    strategy:
       fail-fast: false
       matrix:
         include:
