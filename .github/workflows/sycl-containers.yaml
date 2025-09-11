@@ -6,7 +6,7 @@ on:
   #   - cron: '0 0 1,15 * *'
   push:
     branches:
-      - sycl
+      - test-cuda2
     paths:
       - 'devops/actions/build_container/**'
       - 'devops/containers/**'
