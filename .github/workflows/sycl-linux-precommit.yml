@@ -101,7 +101,7 @@ jobs:
 
   run_prebuilt_e2e_tests:
     # needs: [build, detect_changes, compat_read_exclude]
-    if: ${{ always()
+    if: always()
     strategy:
       fail-fast: false
       matrix:
