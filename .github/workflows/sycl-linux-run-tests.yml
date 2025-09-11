@@ -157,10 +157,10 @@ on:
       image:
         type: choice
         options:
-          - 'ghcr.io/intel/llvm/sycl_ubuntu2404_nightly:latest'
-          - 'ghcr.io/intel/llvm/sycl_prebuilt_tests:sycl-rel-6_2'
-          - 'ghcr.io/intel/llvm/sycl_prebuilt_tests:sycl-rel-6_3'
-          - 'ghcr.io/intel/llvm/ubuntu2404_intel_drivers:alldeps'
+          # - 'ghcr.io/intel/llvm/sycl_ubuntu2404_nightly:latest'
+          # - 'ghcr.io/intel/llvm/sycl_prebuilt_tests:sycl-rel-6_2'
+          # - 'ghcr.io/intel/llvm/sycl_prebuilt_tests:sycl-rel-6_3'
+          - 'ghcr.io/luszczewskakasia1/llvm/ubuntu2404_intel_drivers:alldeps'
       image_options:
         description: |
           Use option with "--device=/dev/kfd" for AMDGPU, without it for the rest.
@@ -221,7 +221,7 @@ jobs:
     name: ${{ inputs.name }}
     runs-on: ${{ fromJSON(inputs.runner) }}
     container:
-      image: ${{ inputs.image || 'ghcr.io/intel/llvm/ubuntu2404_intel_drivers:alldeps'}}
+      image: ${{ inputs.image || 'ghcr.io/luszczewskakasia1/llvm/ubuntu2404_intel_drivers:alldeps'}}
       options: ${{ inputs.image_options }}
     env: ${{ fromJSON(inputs.env) }}
     steps:
@@ -310,7 +310,7 @@ jobs:
       shell: bash
       run: |
         mkdir toolchain
-        wget "https://github.com/intel/llvm/releases/download/$TAG/sycl_linux.tar.gz"
+        wget "https://github.com/luszczewskakasia1/llvm/releases/download/$TAG/sycl_linux.tar.gz"
         tar xf sycl_linux.tar.gz -C toolchain
         echo PATH=$PWD/toolchain/bin/:$PATH >> $GITHUB_ENV
         echo LD_LIBRARY_PATH=$PWD/toolchain/lib/:$LD_LIBRARY_PATH >> $GITHUB_ENV
