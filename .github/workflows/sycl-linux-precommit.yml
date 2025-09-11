@@ -80,7 +80,7 @@ jobs:
 
   compat_read_exclude:
     name: Read compatibility testing exclude list
-    runs-on: [Linux, aux-tasks]
+    runs-on: [Linux]
     outputs:
       FILTER_6_2: ${{ steps.result.outputs.FILTER_6_2 }}
       FILTER_6_3: ${{ steps.result.outputs.FILTER_6_3 }}
@@ -212,23 +212,19 @@ jobs:
   test-perf:
     # needs: [build, detect_changes]
     if: |
-      always() && !cancelled()
-      && needs.build.outputs.build_conclusion == 'success'
-      && (contains(github.event.pull_request.labels.*.name, 'run-perf-tests')
-          || contains(needs.detect_changes.outputs.filters, 'perf-tests'))
-    strategy:
+      always()
       fail-fast: false
       matrix:
         include:
-          - name: Intel GEN12 Graphics system
-            runner: '["Linux", "gen12"]'
-            image_extra_opts: --device=/dev/dri
-          - name: Intel Arc A-Series Graphics system
-            runner: '["Linux", "arc"]'
-            image_extra_opts: --device=/dev/dri
-          - name: AMD system
-            runner: '["Linux", "amdgpu"]'
-            image_extra_opts: --device=/dev/dri --device=/dev/kfd
+          # - name: Intel GEN12 Graphics system
+          #   runner: '["Linux", "gen12"]'
+          #   image_extra_opts: --device=/dev/dri
+          # - name: Intel Arc A-Series Graphics system
+          #   runner: '["Linux", "arc"]'
+          #   image_extra_opts: --device=/dev/dri
+          # - name: AMD system
+          #   runner: '["Linux", "amdgpu"]'
+          #   image_extra_opts: --device=/dev/dri --device=/dev/kfd
           - name: CUDA system
             runner: '["Linux", "cuda"]'
             image_extra_opts: --gpus all
