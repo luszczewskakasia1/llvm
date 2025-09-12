@@ -53,7 +53,7 @@ jobs:
       build_cache_root: "/__w/"
       build_cache_suffix: "default"
       # Docker image has last nightly pre-installed and added to the PATH
-      build_image: "ghcr.io/luszczewskakasia1/llvm/ubuntu2404_base:latest"
+      build_image: "ghcr.io/luszczewskakasia1/llvm/ubuntu2404_build:latest"
       cc: clang
       cxx: clang++
       changes: ${{ needs.detect_changes.outputs.filters }}
