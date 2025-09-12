@@ -273,7 +273,7 @@ jobs:
         name: ${{ inputs.toolchain_artifact }}
     - name: Download SYCL toolchain [workflow_run]
       # NOTE: This is for `sycl-linux-precommit-aws.yml`.
-      # if: inputs.toolchain_artifact != '' && github.event_name == 'workflow_run'
+      if: inputs.toolchain_artifact != '' && github.event_name == 'workflow_run'
       uses: actions/github-script@v7
       with:
         script: |
@@ -295,7 +295,7 @@ jobs:
           let fs = require('fs');
           fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/` + name + '.zip', Buffer.from(download.data));
     - name: Unzip artifact [workflow_run]
-      # if: inputs.toolchain_artifact != '' && github.event_name == 'workflow_run'
+      if: inputs.toolchain_artifact != '' && github.event_name == 'workflow_run'
       run: |
         pwd
         ls
