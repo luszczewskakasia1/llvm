@@ -228,7 +228,8 @@ jobs:
     - name: Fix permissions
       run: |
         sudo chown -R 1001:1001 $GITHUB_WORKSPACE
-        sudo chmod -R 755 /__w/_temp/
+        chown -R 1001:1001 /__w/_temp/ || true
+        sudo chmod -R 777 /__w/_temp/
     - name: whoami
       run: |
         whoami
