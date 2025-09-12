@@ -78,6 +78,7 @@ jobs:
   #     changes: ${{ needs.detect_changes.outputs.filters }}
 
   #     toolchain_artifact: sycl_linux_ubuntu22
+  
 
   compat_read_exclude:
     name: Read compatibility testing exclude list
@@ -86,6 +87,10 @@ jobs:
       FILTER_6_2: ${{ steps.result.outputs.FILTER_6_2 }}
       FILTER_6_3: ${{ steps.result.outputs.FILTER_6_3 }}
     steps:
+    - name: Whoami
+      run: |
+        whoami 
+        ls -la 
     - uses: actions/checkout@v4
       with:
         sparse-checkout: |
