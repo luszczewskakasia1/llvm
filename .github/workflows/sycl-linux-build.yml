@@ -149,6 +149,16 @@ jobs:
       CCACHE_DIR: ${{ inputs.build_cache_root }}/build_cache_${{ inputs.build_cache_suffix }}
       CCACHE_MAXSIZE: 8G
     steps:
+    - name: Update package lists
+      run: sudo apt-get update
+    - name: Install Clang and GCC
+      run: sudo apt-get install -y clang gcc g++
+    - name: Verify installation
+      run: |
+        clang --version
+        clang++ --version
+        gcc --version
+        g++ --version
     - name: tests
       run: |
         whoami
