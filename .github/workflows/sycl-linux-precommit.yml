@@ -173,9 +173,9 @@ jobs:
       target_devices: ${{ matrix.target_devices }}
       extra_lit_opts: ${{ matrix.extra_lit_opts }}
       repo_ref: ${{ github.sha }}
-      toolchain_artifact: ${{ needs.build.outputs.toolchain_artifact }}
-      toolchain_artifact_filename: ${{ needs.build.outputs.toolchain_artifact_filename }}
-      toolchain_decompress_command: ${{ needs.build.outputs.toolchain_decompress_command }}
+      # toolchain_artifact: ${{ needs.build.outputs.toolchain_artifact }}
+      # toolchain_artifact_filename: ${{ needs.build.outputs.toolchain_artifact_filename }}
+      # toolchain_decompress_command: ${{ needs.build.outputs.toolchain_decompress_command }}
       e2e_binaries_artifact: ${{ matrix.e2e_binaries_artifact || 'e2e_bin' }}
       e2e_testing_mode: 'run-only'
 
