@@ -18,7 +18,8 @@ on:
       build_image:
         type: string
         required: false
-        default: "ghcr.io/luszczewskakasia1/llvm/ubuntu2404_intel_drivers:alldeps"
+        # default: "ghcr.io/luszczewskakasia1/llvm/ubuntu2404_intel_drivers:alldeps"
+        default: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_build:latest
       build_ref:
         type: string
         required: false
