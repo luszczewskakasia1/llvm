@@ -225,6 +225,10 @@ jobs:
       options: ${{ inputs.image_options }}
     env: ${{ fromJSON(inputs.env) }}
     steps:
+    - name: whoami
+      run: |
+        whoami
+        ls -la
     - uses: actions/checkout@v4
       with:
         sparse-checkout: |
