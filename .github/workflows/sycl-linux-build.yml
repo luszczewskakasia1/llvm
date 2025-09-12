@@ -18,8 +18,8 @@ on:
       build_image:
         type: string
         required: false
-        # default: "ghcr.io/luszczewskakasia1/llvm/ubuntu2404_intel_drivers:alldeps"
-        default: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_build:latest
+        default: "ghcr.io/luszczewskakasia1/llvm/ubuntu2404_intel_drivers:alldeps"
+        # default: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_build:latest
       build_ref:
         type: string
         required: false
@@ -153,9 +153,9 @@ jobs:
       run: |
         whoami
         ls -la
-        nvidia-smi
-        dpkg -l | grep clang
-        dpkg -l | grep cmake
+        # nvidia-smi
+        # dpkg -l | grep clang
+        # dpkg -l | grep cmake
     - name: Deduce artifact archive params
       # To reduce number of inputs parameters that is limited for manual triggers.
       id: artifact_info
