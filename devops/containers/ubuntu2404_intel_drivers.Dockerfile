@@ -8,6 +8,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 USER root
 
 RUN apt update && apt install -yqq wget
+RUN apt update && apt install -yqq gcc g++ && \
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/*
 
 COPY scripts/get_release.py /
 COPY scripts/install_drivers.sh /
