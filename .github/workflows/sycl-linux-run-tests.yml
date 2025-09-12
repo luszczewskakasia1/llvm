@@ -166,10 +166,9 @@ on:
           Use option with "--device=/dev/kfd" for AMDGPU, without it for the rest.
         type: choice
         options: 
-          - '--user root --gpus all --cap-add SYS_ADMIN --privileged '
-          # - '-u 1001 --device=/dev/dri --device=/dev/kfd --privileged --cap-add SYS_ADMIN'
-          # - '-u 1001 --device=/dev/dri --privileged --cap-add SYS_ADMIN'
-          # - '-u 1001 --gpus all --cap-add SYS_ADMIN'
+          - '-u 1001 --device=/dev/dri --device=/dev/kfd --privileged --cap-add SYS_ADMIN'
+          - '-u 1001 --device=/dev/dri --privileged --cap-add SYS_ADMIN'
+          - '-u 1001 --gpus all --cap-add SYS_ADMIN'
       target_devices:
         type: choice
         options:
@@ -226,12 +225,12 @@ jobs:
       options: ${{ inputs.image_options }}
     env: ${{ fromJSON(inputs.env) }}
     steps:
-    - name: Fix permissions
-      run: |
-        chown -R 1001:1001 $GITHUB_WORKSPACE
-        chown -R 1001:1001 /__w/_temp/ || true
-        chmod -R 777 /__w/_temp/
-        exec su - 1001 -c 'bash'
+    # - name: Fix permissions
+    #   run: |
+    #     chown -R 1001:1001 $GITHUB_WORKSPACE
+    #     chown -R 1001:1001 /__w/_temp/ || true
+    #     chmod -R 777 /__w/_temp/
+    #     exec su - 1001 -c 'bash'
     - name: whoami
       run: |
         whoami
