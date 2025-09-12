@@ -148,6 +148,13 @@ jobs:
       CCACHE_DIR: ${{ inputs.build_cache_root }}/build_cache_${{ inputs.build_cache_suffix }}
       CCACHE_MAXSIZE: 8G
     steps:
+    - name: tests
+      run: |
+        whoami
+        ls -la
+        nvidia-smi
+        dpkg -l | grep clang
+        dpkg -l | grep cmake
     - name: Deduce artifact archive params
       # To reduce number of inputs parameters that is limited for manual triggers.
       id: artifact_info
