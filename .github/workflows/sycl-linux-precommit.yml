@@ -107,7 +107,7 @@ jobs:
         echo FILTER_6_3="$(grep -v '^#\|^\W*$' devops/compat_ci_exclude.sycl-rel-6_3 | paste -sd '|')" >> $GITHUB_OUTPUT
 
   run_prebuilt_e2e_tests:
-    # needs: [build, detect_changes, compat_read_exclude]
+    needs: [build,compat_read_exclude]
     if: always()
     strategy:
       fail-fast: false
@@ -217,7 +217,7 @@ jobs:
       toolchain_decompress_command: ${{ needs.build.outputs.toolchain_decompress_command }}
 
   test-perf:
-    # needs: [build, detect_changes]
+    needs: [build]
     if: always()
     strategy:
       fail-fast: false
