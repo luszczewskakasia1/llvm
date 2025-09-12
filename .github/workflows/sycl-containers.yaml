@@ -1,6 +1,6 @@
 name: CI Containers
 on:
-  workflow_dispatch:
+  # workflow_dispatch:
   # schedule:
   #   # Every 1st and 15th day of month
   #   - cron: '0 0 1,15 * *'
