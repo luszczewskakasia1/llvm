@@ -153,7 +153,7 @@ jobs:
       run: |
         whoami
         ls -la
-        nvcc --version
+        nvidia-smi
         dpkg -l | grep clang
         dpkg -l | grep cmake
     - name: Deduce artifact archive params
