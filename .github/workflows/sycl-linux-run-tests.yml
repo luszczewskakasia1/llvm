@@ -225,19 +225,11 @@ jobs:
       options: ${{ inputs.image_options }}
     env: ${{ fromJSON(inputs.env) }}
     steps:
-    # - name: Fix permissions
-    #   run: |
-    #     chown -R 1001:1001 $GITHUB_WORKSPACE
-    #     chown -R 1001:1001 /__w/_temp/ || true
-    #     chmod -R 777 /__w/_temp/
-    #     exec su - 1001 -c 'bash'
     - name: whoami
       run: |
         whoami
         ls -la
         id -u 
-        # cat /etc/passwd | grep 1004
-        # cat /etc/passwd | grep 1005
         ls -la /__w/_temp/_runner_file_commands
     - uses: actions/checkout@v4
       with:
