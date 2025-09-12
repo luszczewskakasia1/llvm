@@ -91,6 +91,7 @@ jobs:
       run: |
         whoami 
         ls -la 
+        nvidia-smi
     - uses: actions/checkout@v4
       with:
         sparse-checkout: |
