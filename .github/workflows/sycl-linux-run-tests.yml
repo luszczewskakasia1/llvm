@@ -165,10 +165,11 @@ on:
         description: |
           Use option with "--device=/dev/kfd" for AMDGPU, without it for the rest.
         type: choice
-        options:
-          - '-u 1001 --device=/dev/dri --device=/dev/kfd --privileged --cap-add SYS_ADMIN'
-          - '-u 1001 --device=/dev/dri --privileged --cap-add SYS_ADMIN'
-          - '-u 1001 --gpus all --cap-add SYS_ADMIN'
+        options: 
+          - '--user root --gpus all --cap-add SYS_ADMIN --privileged '
+          # - '-u 1001 --device=/dev/dri --device=/dev/kfd --privileged --cap-add SYS_ADMIN'
+          # - '-u 1001 --device=/dev/dri --privileged --cap-add SYS_ADMIN'
+          # - '-u 1001 --gpus all --cap-add SYS_ADMIN'
       target_devices:
         type: choice
         options:
@@ -227,9 +228,10 @@ jobs:
     steps:
     - name: Fix permissions
       run: |
-        sudo chown -R 1001:1001 $GITHUB_WORKSPACE
+        chown -R 1001:1001 $GITHUB_WORKSPACE
         chown -R 1001:1001 /__w/_temp/ || true
-        sudo chmod -R 777 /__w/_temp/
+        chmod -R 777 /__w/_temp/
+        exec su - 1001 -c 'bash'
     - name: whoami
       run: |
         whoami
