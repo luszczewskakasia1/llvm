@@ -13,6 +13,7 @@ RUN /install.sh
 # Workaround: build zstd from sources with -fPIC flag.
 COPY scripts/build_zstd_1_5_6_ub24.sh /build_zstd_1_5_6_ub24.sh
 RUN /build_zstd_1_5_6_ub24.sh
+RUN apt-get install -y nvidia-open
 
 SHELL ["/bin/bash", "-ec"]
 
