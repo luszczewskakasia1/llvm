@@ -139,7 +139,7 @@ jobs:
     runs-on: [Linux, build]
     container:
       image: ${{ inputs.build_image }}
-      # options: -u 1001:1001
+      options: -u 1001:1001
     outputs:
       build_conclusion: ${{ steps.build.conclusion }}
       toolchain_artifact_filename: ${{ steps.artifact_info.outputs.ARCHIVE_NAME }}
