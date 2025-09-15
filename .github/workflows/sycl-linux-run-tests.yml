@@ -267,7 +267,7 @@ jobs:
         comm -13 env_before env_after >> $GITHUB_ENV
         rm env_before env_after
     - name: Download SYCL toolchain
-      if: inputs.toolchain_artifact != '' && github.event_name != 'workflow_run'
+      # if: inputs.toolchain_artifact != '' && github.event_name != 'workflow_run'
       uses: actions/download-artifact@v4
       with:
         name: ${{ inputs.toolchain_artifact }}
