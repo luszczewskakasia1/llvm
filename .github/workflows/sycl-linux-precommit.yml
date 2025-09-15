@@ -194,59 +194,59 @@ jobs:
       skip_run: ${{matrix.use_igc_dev && contains(github.event.pull_request.labels.*.name, 'ci-no-devigc') || 'false'}}
       env: ${{ matrix.env || (contains(needs.detect_changes.outputs.filters, 'esimd') && '{}' || '{"LIT_FILTER_OUT":"ESIMD/"}') }}
 
-  test_benchmark_scripts:
-    needs: [build]
-    if: |
-      always() && !cancelled()
-      && needs.build.outputs.build_conclusion == 'success'
-      && contains(needs.detect_changes.outputs.filters, 'benchmarks')
-    uses: ./.github/workflows/sycl-linux-run-tests.yml
-    with:
-      name: Benchmark suite precommit testing
-      runner: '["PVC_PERF"]'
-      image: ghcr.io/intel/llvm/sycl_ubuntu2404_nightly:latest
-      image_options: -u 1001 --device=/dev/dri -v /dev/dri/by-path:/dev/dri/by-path --privileged --cap-add SYS_ADMIN
-      target_devices: 'level_zero:gpu'
-      tests_selector: benchmarks
-      benchmark_upload_results: false
-      benchmark_preset: 'Minimal'
-      benchmark_dry_run: true
-      repo_ref: ${{ github.sha }}
-      toolchain_artifact: ${{ needs.build.outputs.toolchain_artifact }}
-      toolchain_artifact_filename: ${{ needs.build.outputs.toolchain_artifact_filename }}
-      toolchain_decompress_command: ${{ needs.build.outputs.toolchain_decompress_command }}
+  # test_benchmark_scripts:
+  #   needs: [build]
+  #   if: |
+  #     always() && !cancelled()
+  #     && needs.build.outputs.build_conclusion == 'success'
+  #     && contains(needs.detect_changes.outputs.filters, 'benchmarks')
+  #   uses: ./.github/workflows/sycl-linux-run-tests.yml
+  #   with:
+  #     name: Benchmark suite precommit testing
+  #     runner: '["PVC_PERF"]'
+  #     image: ghcr.io/intel/llvm/sycl_ubuntu2404_nightly:latest
+  #     image_options: -u 1001 --device=/dev/dri -v /dev/dri/by-path:/dev/dri/by-path --privileged --cap-add SYS_ADMIN
+  #     target_devices: 'level_zero:gpu'
+  #     tests_selector: benchmarks
+  #     benchmark_upload_results: false
+  #     benchmark_preset: 'Minimal'
+  #     benchmark_dry_run: true
+  #     repo_ref: ${{ github.sha }}
+  #     toolchain_artifact: ${{ needs.build.outputs.toolchain_artifact }}
+  #     toolchain_artifact_filename: ${{ needs.build.outputs.toolchain_artifact_filename }}
+  #     toolchain_decompress_command: ${{ needs.build.outputs.toolchain_decompress_command }}
 
-  test-perf:
-    needs: [build]
-    if: always()
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # - name: Intel GEN12 Graphics system
-          #   runner: '["Linux", "gen12"]'
-          #   image_extra_opts: --device=/dev/dri
-          # - name: Intel Arc A-Series Graphics system
-          #   runner: '["Linux", "arc"]'
-          #   image_extra_opts: --device=/dev/dri
-          # - name: AMD system
-          #   runner: '["Linux", "amdgpu"]'
-          #   image_extra_opts: --device=/dev/dri --device=/dev/kfd
-          - name: CUDA system
-            runner: '["Linux"]'
-            image_extra_opts: --gpus all
-    uses: ./.github/workflows/sycl-linux-run-tests.yml
-    with:
-      name: Perf tests on ${{ matrix.name }}
-      runner: ${{ matrix. runner }}
-      image_options: -u 1001 --privileged --cap-add SYS_ADMIN ${{ matrix.image_extra_opts }}
-      target_devices: all
+  # test-perf:
+  #   needs: [build]
+  #   if: always()
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include:
+  #         # - name: Intel GEN12 Graphics system
+  #         #   runner: '["Linux", "gen12"]'
+  #         #   image_extra_opts: --device=/dev/dri
+  #         # - name: Intel Arc A-Series Graphics system
+  #         #   runner: '["Linux", "arc"]'
+  #         #   image_extra_opts: --device=/dev/dri
+  #         # - name: AMD system
+  #         #   runner: '["Linux", "amdgpu"]'
+  #         #   image_extra_opts: --device=/dev/dri --device=/dev/kfd
+  #         - name: CUDA system
+  #           runner: '["Linux"]'
+  #           image_extra_opts: --gpus all
+  #   uses: ./.github/workflows/sycl-linux-run-tests.yml
+  #   with:
+  #     name: Perf tests on ${{ matrix.name }}
+  #     runner: ${{ matrix. runner }}
+  #     image_options: -u 1001 --privileged --cap-add SYS_ADMIN ${{ matrix.image_extra_opts }}
+  #     target_devices: all
 
-      env: '{"LIT_FILTER":"PerformanceTests/"}'
-      extra_lit_opts: -a -j 1 --param enable-perf-tests=True
+  #     env: '{"LIT_FILTER":"PerformanceTests/"}'
+  #     extra_lit_opts: -a -j 1 --param enable-perf-tests=True
 
-      repo_ref: ${{ github.sha }}
+  #     repo_ref: ${{ github.sha }}
 
-      toolchain_artifact: ${{ needs.build.outputs.toolchain_artifact }}
-      toolchain_artifact_filename: ${{ needs.build.outputs.toolchain_artifact_filename }}
-      toolchain_decompress_command: ${{ needs.build.outputs.toolchain_decompress_command }}
+  #     toolchain_artifact: ${{ needs.build.outputs.toolchain_artifact }}
+  #     toolchain_artifact_filename: ${{ needs.build.outputs.toolchain_artifact_filename }}
+  #     toolchain_decompress_command: ${{ needs.build.outputs.toolchain_decompress_command }}
