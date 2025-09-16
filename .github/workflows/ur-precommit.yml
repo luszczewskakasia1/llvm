@@ -77,7 +77,7 @@ jobs:
           #   runner: UR_HIP
           #   image_options: -u 1001 --device=/dev/dri --device=/dev/kfd --cap-add=SYS_ADMIN 
           - name: CUDA
-            runner: cuda
+            runner: '["Linux", "cuda"]'
             image_options: -u 1001 --privileged --cap-add SYS_ADMIN --gpus all
           # - name: OPENCL
           #   runner: UR_OPENCL
