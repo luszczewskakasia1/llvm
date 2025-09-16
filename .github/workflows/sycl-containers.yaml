@@ -1,12 +1,22 @@
+
 name: CI Containers
 on:
-  # workflow_dispatch:
+  workflow_dispatch:
+      inputs:
+        branch:
+          description: 'Branch to checkout'
+          required: true
+          default: 'test-cuda2'
   # schedule:
   #   # Every 1st and 15th day of month
   #   - cron: '0 0 1,15 * *'
   push:
     branches:
       - test-cuda2
+  # workflow_dispatch:
+  # schedule:
+  #   # Every 1st and 15th day of month
+  #   - cron: '0 0 1,15 * *'
     paths:
       - 'devops/actions/build_container/**'
       - 'devops/containers/**'
