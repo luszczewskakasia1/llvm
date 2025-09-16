@@ -52,7 +52,7 @@ jobs:
   adapters:
     name: Adapters
     needs: [ source_checks]
-    if: ${{ always() && !cancelled() && contains(needs.detect_changes.outputs.filters, 'ur') }}
+    # if: ${{ always() && !cancelled() && contains(needs.detect_changes.outputs.filters, 'ur') }}
     strategy:
       fail-fast: false
       matrix:
@@ -77,7 +77,7 @@ jobs:
           #   runner: UR_HIP
           #   image_options: -u 1001 --device=/dev/dri --device=/dev/kfd --cap-add=SYS_ADMIN 
           - name: CUDA
-            runner: UR_CUDA
+            runner: cuda
             image_options: -u 1001 --privileged --cap-add SYS_ADMIN --gpus all
           # - name: OPENCL
           #   runner: UR_OPENCL
