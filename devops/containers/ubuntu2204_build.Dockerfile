@@ -35,7 +35,7 @@ RUN echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.rad
     > /etc/apt/preferences.d/rocm-pin-600
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends rocm-dev && \
+    apt-get install  rocm && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY scripts/create-sycl-user.sh /user-setup.sh
