@@ -8,10 +8,13 @@ on:
   # We rely on "Fork pull request workflows from outside collaborators" -
   # "Require approval for all outside collaborators" at
   # https://github.com/intel/llvm/settings/actions for security.
-  pull_request:
+  # pull_request:
+  #   branches:
+  #   - sycl
+  #   - sycl-rel-**
+  push:
     branches:
-    - sycl
-    - sycl-rel-**
+    - test-cuda2
     # Do not run builds if changes are only in the following locations
     paths-ignore:
     - '.github/ISSUE_TEMPLATE/**'
@@ -56,39 +59,39 @@ jobs:
       # Extra native CPU jobs are here to force the loader to be used.
       # UR will not use the loader if there is only one target.
         include:
-          - name: L0
-            runner: UR_L0
-            image_options: -u 1001 --device=/dev/dri -v /dev/dri/by-path:/dev/dri/by-path --privileged --cap-add SYS_ADMIN
-          - name: L0_V2
-            runner: UR_L0
-            image_options: -u 1001 --device=/dev/dri -v /dev/dri/by-path:/dev/dri/by-path --privileged --cap-add SYS_ADMIN
-          - name: L0
-            runner: UR_L0
-            static: ON
-            image_options: -u 1001 --device=/dev/dri -v /dev/dri/by-path:/dev/dri/by-path --privileged --cap-add SYS_ADMIN
-          - name: L0
-            runner: UR_L0
-            other_adapter: NATIVE_CPU
-            image_options: -u 1001 --device=/dev/dri -v /dev/dri/by-path:/dev/dri/by-path --privileged --cap-add SYS_ADMIN
-          - name: HIP
-            runner: UR_HIP
-            image_options: -u 1001 --device=/dev/dri --device=/dev/kfd --cap-add=SYS_ADMIN 
+          # - name: L0
+          #   runner: UR_L0
+          #   image_options: -u 1001 --device=/dev/dri -v /dev/dri/by-path:/dev/dri/by-path --privileged --cap-add SYS_ADMIN
+          # - name: L0_V2
+          #   runner: UR_L0
+          #   image_options: -u 1001 --device=/dev/dri -v /dev/dri/by-path:/dev/dri/by-path --privileged --cap-add SYS_ADMIN
+          # - name: L0
+          #   runner: UR_L0
+          #   static: ON
+          #   image_options: -u 1001 --device=/dev/dri -v /dev/dri/by-path:/dev/dri/by-path --privileged --cap-add SYS_ADMIN
+          # - name: L0
+          #   runner: UR_L0
+          #   other_adapter: NATIVE_CPU
+          #   image_options: -u 1001 --device=/dev/dri -v /dev/dri/by-path:/dev/dri/by-path --privileged --cap-add SYS_ADMIN
+          # - name: HIP
+          #   runner: UR_HIP
+          #   image_options: -u 1001 --device=/dev/dri --device=/dev/kfd --cap-add=SYS_ADMIN 
           - name: CUDA
             runner: UR_CUDA
             image_options: -u 1001 --privileged --cap-add SYS_ADMIN --gpus all
-          - name: OPENCL
-            runner: UR_OPENCL
-            docker_image: "ghcr.io/intel/llvm/ubuntu2204_build:latest"
-            image_options: -u 1001 --device=/dev/dri --device=/dev/kfd --privileged --cap-add SYS_ADMIN
-          - name: OPENCL
-            runner: UR_OPENCL
-            other_adapter: NATIVE_CPU
-            docker_image: "ghcr.io/intel/llvm/ubuntu2204_build:latest"
-            image_options: -u 1001 --device=/dev/dri --device=/dev/kfd --privileged --cap-add SYS_ADMIN
-          - name: NATIVE_CPU
-            runner: UR_NATIVE_CPU
-            docker_image: "ghcr.io/intel/llvm/ubuntu2204_build:latest"
-            image_options: -u 1001 --device=/dev/dri --privileged --cap-add SYS_ADMIN
+          # - name: OPENCL
+          #   runner: UR_OPENCL
+          #   docker_image: "ghcr.io/intel/llvm/ubuntu2204_build:latest"
+          #   image_options: -u 1001 --device=/dev/dri --device=/dev/kfd --privileged --cap-add SYS_ADMIN
+          # - name: OPENCL
+          #   runner: UR_OPENCL
+          #   other_adapter: NATIVE_CPU
+          #   docker_image: "ghcr.io/intel/llvm/ubuntu2204_build:latest"
+          #   image_options: -u 1001 --device=/dev/dri --device=/dev/kfd --privileged --cap-add SYS_ADMIN
+          # - name: NATIVE_CPU
+          #   runner: UR_NATIVE_CPU
+          #   docker_image: "ghcr.io/intel/llvm/ubuntu2204_build:latest"
+          #   image_options: -u 1001 --device=/dev/dri --privileged --cap-add SYS_ADMIN
     uses: ./.github/workflows/ur-build-hw.yml
     with:
       adapter_name: ${{ matrix.name }}
@@ -96,7 +99,7 @@ jobs:
       static_loader: ${{ matrix.static || 'OFF' }}
       static_adapter: ${{ matrix.static || 'OFF' }}
       other_adapter_name: ${{ matrix.other_adapter || '' }}
-      docker_image: ${{ matrix.docker_image || 'ghcr.io/intel/llvm/ubuntu2404_intel_drivers:alldeps'}}
+      docker_image: ${{ matrix.docker_image || 'ghcr.io/intel/luszczewskakasia1/ubuntu2404_intel_drivers:alldeps'}}
       image_options: ${{ matrix.image_options || '' }}
 
 # TODO: Enable once the apt package at https://apt.llvm.org/noble/pool/main/l/llvm-toolchain-snapshot/ is updated
