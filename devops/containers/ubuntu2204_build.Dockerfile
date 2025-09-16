@@ -20,16 +20,23 @@ RUN /install.sh
 RUN mkdir --parents --mode=0755 /etc/apt/keyrings
 # Download the key, convert the signing-key to a full
 # keyring required by apt and store in the keyring directory
+# RUN wget https://repo.radeon.com/rocm/rocm.gpg.key -O - | \
+# gpg --dearmor | tee /etc/apt/keyrings/rocm.gpg > /dev/null && \
+
+RUN mkdir -p /etc/apt/keyrings && chmod 755 /etc/apt/keyrings
 RUN wget https://repo.radeon.com/rocm/rocm.gpg.key -O - | \
-gpg --dearmor | tee /etc/apt/keyrings/rocm.gpg > /dev/null && \
-# Add rocm repo
-echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/6.3 jammy main" \
-| tee --append /etc/apt/sources.list.d/rocm.list && \
-printf 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' | tee /etc/apt/preferences.d/rocm-pin-600
-# Install the kernel driver
-RUN apt update && apt install -yqq rocm-dev && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/*
+    gpg --dearmor | tee /etc/apt/keyrings/rocm.gpg > /dev/null
+
+RUN echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/amdgpu/6.1.2/ubuntu jammy main" \
+    > /etc/apt/sources.list.d/amdgpu.list && \
+    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/6.1.2 jammy main" \
+    > /etc/apt/sources.list.d/rocm.list && \
+    echo -e 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' \
+    > /etc/apt/preferences.d/rocm-pin-600
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends rocm-dev && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY scripts/create-sycl-user.sh /user-setup.sh
 RUN /user-setup.sh
