@@ -95,7 +95,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.llvm }}
+          password: ${{ secrets.LLVM }}
       - name: Build and Push Container
         uses: ./devops/actions/build_container
         with:
