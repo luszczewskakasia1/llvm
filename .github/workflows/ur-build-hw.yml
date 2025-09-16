@@ -157,10 +157,12 @@ jobs:
     - name: Debug CMake Cache
       if: ${{ matrix.adapter.name == 'CUDA' }}
       run: grep -i nvidia build/CMakeCache.txt
+      
     - name: tests
-      whoami
-      pwd
-      nvidia-smi
+      run: |
+        whoami
+        pwd
+        nvidia-smi
 
     - name: Build
       # This is so that device binaries can find the sycl runtime library
