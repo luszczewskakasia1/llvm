@@ -1,5 +1,6 @@
 name: SYCL Pre Commit on Linux
 
+
 on:
   # We rely on "Fork pull request workflows from outside collaborators" -
   # "Require approval for all outside collaborators" at
