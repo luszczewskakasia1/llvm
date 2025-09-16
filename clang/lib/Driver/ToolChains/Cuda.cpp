@@ -461,8 +461,8 @@ void NVPTX::Assembler::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lineinfo");
 
   // Pass -v to ptxas if it was passed to the driver.
-  if (Args.hasArg(options::OPT_v))
-    CmdArgs.push_back("-v");
+  // if (Args.hasArg(options::OPT_v))
+  //   CmdArgs.push_back("-v");
 
   CmdArgs.push_back("--gpu-name");
   CmdArgs.push_back(Args.MakeArgString(OffloadArchToString(gpu_arch)));
