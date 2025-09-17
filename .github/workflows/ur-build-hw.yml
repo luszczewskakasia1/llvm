@@ -132,6 +132,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y intel-oneapi-runtime-opencl
 
+    - name: Reload llvm
+      run: |
+        cd /__w/llvm/llvm/
+        rm -rf build
+
     - name: Configure Unified Runtime project
       # ">" is used to avoid adding "\" at the end of each line; this command is quite long
       run: >
