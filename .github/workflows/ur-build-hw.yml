@@ -163,6 +163,7 @@ jobs:
         whoami
         pwd
         nvcc --version
+        nvidia-smi --query-gpu=compute_cap --format=csv
 
     - name: Build
       # This is so that device binaries can find the sycl runtime library
