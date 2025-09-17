@@ -2,7 +2,8 @@
 #ARG base_image=ghcr.io/luszczewskakasia1/llvm/ubuntu2404_base
 
 #FROM $base_image:$base_tag
-FROM nvidia/cuda:12.1-devel-ubuntu22.04
+FROM nvidia/cuda:12.6.3-devel-ubuntu24.04
+# nvidia/cuda:12.1-devel-ubuntu22.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 USER root
