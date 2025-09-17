@@ -164,6 +164,8 @@ jobs:
         pwd
         nvcc --version
         nvidia-smi --query-gpu=compute_cap --format=csv
+        echo 'SYCL'
+        sycl-ls --verbose
 
     - name: Build
       # This is so that device binaries can find the sycl runtime library
