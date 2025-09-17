@@ -155,9 +155,10 @@ jobs:
         -DUR_DPCXX=./dpcpp_compiler/bin/clang++
         -DUR_SYCL_LIBRARY_DIR=./dpcpp_compiler/lib
         -DCMAKE_INSTALL_PREFIX=./install
+        -DCMAKE_CUDA_ARCHITECTURES="75"
         ${{ matrix.adapter.name == 'HIP' && '-DUR_CONFORMANCE_AMD_ARCH=gfx1030' || '' }}
         ${{ matrix.adapter.name == 'HIP' && '-DUR_HIP_PLATFORM=AMD' || '' }}
-        ${{ matrix.adapter.name == 'CUDA' && '-DUR_CONFORMANCE_NVIDIA_ARCH=sm_60' || '' }}
+        # ${{ matrix.adapter.name == 'CUDA' && '-DUR_CONFORMANCE_NVIDIA_ARCH=sm_60' || '' }}
         
     - name: Debug CMake Cache
       if: ${{ matrix.adapter.name == 'CUDA' }}
