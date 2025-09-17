@@ -122,7 +122,7 @@ macro(add_device_binary SOURCE_FILE)
 
     set(IH_PATH "${DEVICE_BINARY_DIR}/${KERNEL_NAME}.ih")
     add_custom_command(OUTPUT "${IH_PATH}"
-        COMMAND ${UR_FOUND_DPCXX} -fsycl -fsycl-device-code-split=off
+        COMMAND ${UR_FOUND_DPCXX} -fsycl -fsycl-device-code-split=off --cuda-gpu-arch=sm_75
         -fsycl-device-only -c -Xclang -fsycl-int-header="${IH_PATH}"
         ${DPCXX_BUILD_FLAGS_LIST} ${SOURCE_FILE} -o ${NULDEV}
 
