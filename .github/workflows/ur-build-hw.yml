@@ -162,6 +162,11 @@ jobs:
     - name: Debug CMake Cache
       if: ${{ matrix.adapter.name == 'CUDA' }}
       run: grep -i nvidia build/CMakeCache.txt
+
+    - name: See if files has changed
+      run: |
+        cat clang/lib/Driver/Driver.cpp | grep 'SM_75'
+        cat libdevice/cmake/modules/SYCLLibdevice.cmake | grep 'sm_75'
       
     - name: tests
       run: |
