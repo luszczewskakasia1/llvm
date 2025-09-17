@@ -162,7 +162,7 @@ jobs:
       run: |
         whoami
         pwd
-        nvidia-smi
+        nvcc --version
 
     - name: Build
       # This is so that device binaries can find the sycl runtime library
