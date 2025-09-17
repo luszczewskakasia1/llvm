@@ -12,12 +12,10 @@ name: Unified Runtime Pre Commit
   #   - sycl
   #   - sycl-rel-**
 on:
-  workflow_dispatch:
-      inputs:
-        branch:
-          description: 'Branch to checkout'
-          required: true
-          default: 'test-cuda2'
+  push:
+    branches:
+      - test-cuda2
+      - test-cuda3
     # Do not run builds if changes are only in the following locations
     # paths-ignore:
     # - '.github/ISSUE_TEMPLATE/**'
