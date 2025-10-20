@@ -84,6 +84,13 @@ if( LIBCLC_STANDALONE_BUILD OR CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DI
       set( ${tool}_target )
     endforeach()
   endif()
+<<<<<<< HEAD
+=======
+
+  # Setup the paths where libclc runtimes should be stored.
+  set( LIBCLC_OUTPUT_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR} )
+  set( LIBCLC_INSTALL_DIR ${CMAKE_INSTALL_DATADIR}/clc )
+>>>>>>> b9e2f7ac0489b2045aa78475e9663c2d3e5bedf7
 else()
   # In-tree configuration
   set( LIBCLC_STANDALONE_BUILD FALSE )
@@ -104,6 +111,20 @@ else()
     get_host_tool_path( llvm-spirv LLVM_SPIRV llvm-spirv_exe llvm-spirv_target )
     get_host_tool_path( opt OPT opt_exe opt_target )
   endif()
+<<<<<<< HEAD
+=======
+
+  # Setup the paths where libclc runtimes should be stored. By default, in an
+  # in-tree build we place the libraries in clang's resource driectory.
+  include(GetClangResourceDir)
+  get_clang_resource_dir( LIBCLC_INSTALL_DIR )
+  cmake_path( APPEND LIBCLC_INSTALL_DIR "lib" "libclc" )
+
+  # Note we do not adhere to LLVM_ENABLE_PER_TARGET_RUNTIME_DIR.
+  cmake_path( GET LLVM_LIBRARY_OUTPUT_INTDIR PARENT_PATH LIBCLC_OUTPUT_LIBRARY_DIR )
+  cmake_path( APPEND LIBCLC_OUTPUT_LIBRARY_DIR ${LIBCLC_INSTALL_DIR} )
+  file( MAKE_DIRECTORY ${LIBCLC_OUTPUT_LIBRARY_DIR} )
+>>>>>>> b9e2f7ac0489b2045aa78475e9663c2d3e5bedf7
 endif()
 
 if( EXISTS ${LIBCLC_CUSTOM_LLVM_TOOLS_BINARY_DIR} )
