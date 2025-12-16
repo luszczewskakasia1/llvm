@@ -8,6 +8,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 USER root
 
+RUN apt-get update && apt-get install -y jq
 RUN apt update && apt install -yqq wget
 RUN apt update && apt install -yqq gcc g++ && \
   apt-get clean && \
