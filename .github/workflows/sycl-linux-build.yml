@@ -150,6 +150,12 @@ jobs:
       CCACHE_DIR: ${{ inputs.build_cache_root }}/build_cache_${{ inputs.build_cache_suffix }}
       CCACHE_MAXSIZE: 8G
     steps:
+    - name: Install clang 
+      run: |
+        sudo apt install clang -y
+    - name: Check cuda version
+      run: |
+        nvcc --version
     - name: Deduce artifact archive params
       # To reduce number of inputs parameters that is limited for manual triggers.
       id: artifact_info
