@@ -1,20 +1,14 @@
-#ARG base_tag=latest
-#ARG base_image=ghcr.io/luszczewskakasia1/llvm/ubuntu2404_base
+ARG base_tag=latest
+ARG base_image=ghcr.io/luszczewskakasia1/llvm/ubuntu2404_base
 
-#FROM $base_image:$base_tag
-FROM nvidia/cuda:12.6.3-devel-ubuntu24.04
-# nvidia/cuda:12.1-devel-ubuntu22.04
+FROM $base_image:$base_tag
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 USER root
 
-RUN apt-get update && apt-get install -y jq
 RUN apt update && apt install -yqq wget
-RUN apt update && apt install -yqq gcc g++ && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/*
 
-COPY scripts/get_release.py /
 COPY scripts/install_drivers.sh /
 COPY dependencies.json /
 
@@ -28,4 +22,3 @@ COPY scripts/drivers_entrypoint.sh /drivers_entrypoint.sh
 USER sycl
 
 ENTRYPOINT ["/bin/bash", "/drivers_entrypoint.sh"]
-
