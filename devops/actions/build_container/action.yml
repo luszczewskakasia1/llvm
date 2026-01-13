@@ -44,10 +44,11 @@ runs:
   #     secrets: |
   #       github_token=${{ github.token }}
   - name: build and push
+    shell: bash
     run: |
-      docker build `
-        -t ghcr.io/luszczewskakasia1/llvm/ubuntu2204_build:latest `
-        -f ${{ github.workspace }}/devops/containers/${{ inputs.file }}.Dockerfile `
-        devops
-
-      docker push ghcr.io/luszczewskakasia1/llvm/ubuntu2204_build:latest
+      docker build \
+        -t ghcr.io/${{ github.repository }}/${{ inputs.file }}:latest \
+        -f ${{ github.workspace }}/devops/containers/${{ inputs.file }}.Dockerfile \
+        ${{ github.workspace }}/devops
+      
+      docker push ghcr.io/${{ github.repository }}/${{ inputs.file }}:latest
