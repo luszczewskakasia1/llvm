@@ -33,10 +33,10 @@ on:
   #     - 'devops/scripts/install_build_tools.sh'
   #     - '.github/workflows/sycl-containers.yaml'
 
-# permissions: read-all
-permissions:
-  contents: read
-  packages: write
+permissions: read-all
+# permissions:
+#   contents: read
+#   packages: write
   
 jobs:
   build_and_push_images:
