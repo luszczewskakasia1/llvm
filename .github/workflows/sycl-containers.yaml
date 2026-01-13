@@ -109,5 +109,9 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}/${{ matrix.file }}:${{ matrix.tag }}-${{ github.sha }}
             ghcr.io/${{ github.repository }}/${{ matrix.file }}:${{ matrix.tag }}
-          build-args: ${{ matrix.build_args }}
+          # build-args: ${{ matrix.build_args }}
+          build-args: |
+            ${{ matrix.build_args }}
+            ${{ matrix.build_args_template && format('base_image=ghcr.io/{0}/{1}', github.repository, matrix.build_args_template) || '' }}
+            ${{ matrix.build_args_template && 'base_tag=latest' || '' }}
 
