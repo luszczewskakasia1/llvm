@@ -225,10 +225,9 @@ jobs:
       options: ${{ inputs.image_options }}
     env: ${{ fromJSON(inputs.env) }}
     steps:
-    - name: whoami
+    - name: Install clang
       run: |
         sudo apt install clang
-        # nvidia-smi
     - uses: actions/checkout@v6
       with:
         sparse-checkout: |
@@ -244,6 +243,15 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       run: |
         sudo -E bash devops/scripts/install_drivers.sh devops/dependencies.json --all
+    - name: Check nvidia/cuda version 
+      run: |
+        if command -v nvidia-smi &> /dev/null
+        then
+          nvidia-smi
+          nvcc --version
+        else
+          echo "nvidia-smi could not be found"
+        fi
     - name: Source OneAPI TBB vars.sh
       uses: ./devops/actions/source-tbb
     - name: Download SYCL toolchain
