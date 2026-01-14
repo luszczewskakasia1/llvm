@@ -233,7 +233,7 @@ jobs:
       contents: write
       packages: read
     container:
-      image: ${{ inputs.image || 'ghcr.io/intel/llvm/ubuntu2404_intel_drivers:alldeps'}}
+      image: ${{ inputs.image || 'ghcr.io/luszczewskakasia1/llvm/ubuntu2404_intel_drivers:alldeps'}}
       options: ${{ inputs.image_options }}
     env: ${{ fromJSON(inputs.env) }}
     steps:
@@ -304,7 +304,7 @@ jobs:
       shell: bash
       run: |
         mkdir toolchain
-        wget "https://github.com/intel/llvm/releases/download/$TAG/sycl_linux.tar.gz"
+        wget "https://github.com/luszczewskakasia1/llvm/releases/download/$TAG/sycl_linux.tar.gz"
         tar xf sycl_linux.tar.gz -C toolchain
         echo PATH=$PWD/toolchain/bin/:$PATH >> $GITHUB_ENV
         echo LD_LIBRARY_PATH=$PWD/toolchain/lib/:$LD_LIBRARY_PATH >> $GITHUB_ENV
