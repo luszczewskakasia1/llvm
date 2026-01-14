@@ -60,7 +60,7 @@ jobs:
       build_cache_root: "/__w/"
       build_cache_suffix: "default"
       # Docker image has last nightly pre-installed and added to the PATH
-      build_image: "ghcr.io/luszczewskakasia1/llvm/ubuntu2404_intel_drivers:alldeps"
+      build_image: "ghcr.io/intel/llvm/sycl_ubuntu2404_nightly:latest"
       cc: clang
       cxx: clang++
       changes: ${{ needs.detect_changes.outputs.filters }}
@@ -71,39 +71,40 @@ jobs:
 
   # Build and run native cpu e2e tests separately as cannot currently
   # build all the e2e tests
-  build_run_native_cpu_e2e_tests:
-    if: ${{ !cancelled() && needs.build.outputs.build_conclusion == 'success' }}
-    runs-on: [Linux, build]
-    needs: [build]
-    container:
-      image: ghcr.io/intel/llvm/sycl_ubuntu2404_nightly:latest
-      options: -u 1001:1001
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          sparse-checkout: |
-            devops/
+  # Probably not needed now
+  # build_run_native_cpu_e2e_tests:
+  #   if: ${{ !cancelled() && needs.build.outputs.build_conclusion == 'success' }}
+  #   runs-on: [Linux, build]
+  #   needs: [build]
+  #   container:
+  #     image: ghcr.io/intel/llvm/sycl_ubuntu2404_nightly:latest
+  #     options: -u 1001:1001
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #       with:
+  #         sparse-checkout: |
+  #           devops/
 
-      # download build artefact
-      - name: Download toolchain
-        uses: actions/download-artifact@v7
-        with:
-          name: sycl_linux_default
-      - name: Extract SYCL toolchain
-        shell: bash
-        run: |
-          mkdir toolchain
-          tar -xf llvm_sycl.tar.zst -C toolchain
-          rm llvm_sycl.tar.zst
-      - name: Build and run E2E tests
-        uses: ./devops/actions/run-tests/e2e
-        with:
-          ref: ${{ inputs.ref || github.sha }}
-          testing_mode: full
-          target_devices: native_cpu:cpu
-          sycl_compiler: $GITHUB_WORKSPACE/toolchain/bin/clang++
-          extra_lit_opts: --param sycl_build_targets="native_cpu"
-          extra_cmake_args: -DSYCL_TEST_E2E_TARGETS="native_cpu:cpu" -DSYCL_TEST_E2E_STANDALONE=ON
+  #     # download build artefact
+  #     - name: Download toolchain
+  #       uses: actions/download-artifact@v7
+  #       with:
+  #         name: sycl_linux_default
+  #     - name: Extract SYCL toolchain
+  #       shell: bash
+  #       run: |
+  #         mkdir toolchain
+  #         tar -xf llvm_sycl.tar.zst -C toolchain
+  #         rm llvm_sycl.tar.zst
+  #     - name: Build and run E2E tests
+  #       uses: ./devops/actions/run-tests/e2e
+  #       with:
+  #         ref: ${{ inputs.ref || github.sha }}
+  #         testing_mode: full
+  #         target_devices: native_cpu:cpu
+  #         sycl_compiler: $GITHUB_WORKSPACE/toolchain/bin/clang++
+  #         extra_lit_opts: --param sycl_build_targets="native_cpu"
+  #         extra_cmake_args: -DSYCL_TEST_E2E_TARGETS="native_cpu:cpu" -DSYCL_TEST_E2E_STANDALONE=ON
 
   # If a PR changes CUDA adapter, run the build on Ubuntu 22.04 as well.
   # Ubuntu 22.04 container has CUDA 12.1 installed while Ubuntu 24.0 image
@@ -166,7 +167,12 @@ jobs:
           #   target_devices: cuda:gpu
           - name: NVIDIA/CUDA 13
             runner: '["Linux", "cuda"]'
-            # image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_intel_drivers:alldeps
+            image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_intel_drivers:alldeps
+            image_options: -u 1001 --gpus all --cap-add SYS_ADMIN
+            target_devices: cuda:gpu
+          - name: NVIDIA/CUDA 12.6 - Preview Mode
+            runner: '["Linux", "cuda"]'
+            image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_cuda126_intel_drivers:alldeps
             image_options: -u 1001 --gpus all --cap-add SYS_ADMIN
             target_devices: cuda:gpu
           # - name: AMD/HIP
