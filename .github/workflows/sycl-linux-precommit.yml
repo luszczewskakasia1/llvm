@@ -161,12 +161,12 @@ jobs:
           #   target_devices: level_zero:gpu;opencl:gpu;opencl:cpu
           - name: NVIDIA/CUDA 12.1
             runner: '["Linux", "cuda"]'
-            image: ghcr.io/intel/llvm/ubuntu2204_build:latest
+            image: ghcr.io/luszczewskakasia1/llvm/ubuntu2204_intel_drivers:alldeps
             image_options: -u 1001 --gpus all --cap-add SYS_ADMIN
             target_devices: cuda:gpu
           - name: NVIDIA/CUDA 13
             runner: '["Linux", "cuda"]'
-            image: ghcr.io/intel/llvm/ubuntu2404_intel_drivers:alldeps
+            image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_intel_drivers:alldeps
             image_options: -u 1001 --gpus all --cap-add SYS_ADMIN
             target_devices: cuda:gpu
           # - name: AMD/HIP
