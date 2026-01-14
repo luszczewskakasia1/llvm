@@ -18,7 +18,7 @@ on:
       build_image:
         type: string
         required: false
-        default: "ghcr.io/intel/llvm/ubuntu2404_intel_drivers:alldeps"
+        default: "ghcr.io/luszczewskakasia1/llvm/ubuntu2404_intel_drivers:alldeps"
       build_ref:
         type: string
         required: false
@@ -190,6 +190,14 @@ jobs:
     - name: Setup oneAPI env
       if: ${{ inputs.cc == 'icx' || inputs.cxx == 'icpx' }}
       uses: ./devops/actions/setup_linux_oneapi_env
+    - name: Install ROCm HIP libraries
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install -y rocm-hip-libraries
+
+    - name: Remove CMake cache
+      run: rm -f /__w/llvm/llvm/build/CMakeCache.txt
     - name: Configure
       # Setting `CMAKE_INSTALL_PREFIX` is important because that's the location
       # where `sycl-linux-run-tests.yml` unpacks the toolchain to. That location
