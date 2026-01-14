@@ -280,13 +280,18 @@ jobs:
           # - name: AMD system
           #   runner: '["Linux", "amdgpu"]'
           #   image_extra_opts: --device=/dev/dri --device=/dev/kfd
-          - name: CUDA system
-            runner: '["Linux"]'
+          - name: CUDA 13 system
+            runner: '["Linux", "cuda"]'
+            image_extra_opts: --gpus all
+          - name: CUDA 12.6 system
+            runner: '["Linux", "cuda"]'
+            image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_cuda126_intel_drivers:alldeps
             image_extra_opts: --gpus all
     uses: ./.github/workflows/sycl-linux-run-tests.yml
     with:
       name: Perf tests on ${{ matrix.name }}
       runner: ${{ matrix.runner }}
+      image: ${{ matrix.image }}
       image_options: -u 1001 --privileged --cap-add SYS_ADMIN ${{ matrix.image_extra_opts }}
       target_devices: all
 
