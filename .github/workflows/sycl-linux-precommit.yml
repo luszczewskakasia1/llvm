@@ -166,7 +166,7 @@ jobs:
             target_devices: cuda:gpu
           - name: NVIDIA/CUDA 13
             runner: '["Linux", "cuda"]'
-            image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_intel_drivers:alldeps
+            # image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_intel_drivers:alldeps
             image_options: -u 1001 --gpus all --cap-add SYS_ADMIN
             target_devices: cuda:gpu
           # - name: AMD/HIP
