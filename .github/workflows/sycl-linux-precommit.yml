@@ -48,13 +48,14 @@ concurrency:
 
 permissions: read-all
 
+
 jobs:
-  detect_changes:
-    uses: ./.github/workflows/sycl-detect-changes.yml
+  # detect_changes:
+  #   uses: ./.github/workflows/sycl-detect-changes.yml
 
   build:
     name: Self build
-    needs: [detect_changes]
+    # needs: [detect_changes]
     if: success()
     uses: ./.github/workflows/sycl-linux-build.yml
     with:
@@ -65,7 +66,7 @@ jobs:
       build_image: "ghcr.io/luszczewskakasia1/llvm/sycl_ubuntu2404_nightly:latest"
       cc: clang
       cxx: clang++
-      changes: ${{ needs.detect_changes.outputs.filters }}
+      # changes: ${{ needs.detect_changes.outputs.filters }}
 
       toolchain_artifact: sycl_linux_default
       e2e_binaries_artifact: e2e_bin
@@ -146,7 +147,7 @@ jobs:
         echo FILTER_6_3="$(grep -v '^#\|^\W*$' devops/compat_ci_exclude.sycl-rel-6_3 | paste -sd '|')" >> $GITHUB_OUTPUT
 
   E2E:
-    needs: [build, detect_changes, compat_read_exclude]
+    needs: [build, compat_read_exclude]
     if: ${{ !cancelled() && needs.build.outputs.build_conclusion == 'success' }}
     permissions:
       contents: write
@@ -227,7 +228,7 @@ jobs:
       env: ${{ matrix.env || (contains(needs.detect_changes.outputs.filters, 'esimd') && '{}' || '{"LIT_FILTER_OUT":"ESIMD/"}') }}
 
   test-perf:
-    needs: [build, detect_changes]
+    needs: [build]
     permissions:
       contents: write
       packages: read
