@@ -163,6 +163,11 @@ jobs:
             runner: '["Linux", "cuda"]'
             image_options: -u 1001 --privileged --cap-add SYS_ADMIN --gpus all
             target_devices: cuda:gpu
+          - name: NVIDIA/CUDA 12.6
+            runner: '["Linux", "cuda"]'
+            image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_cuda126_intel_drivers:alldeps
+            image_options: -u 1001 --privileged --cap-add SYS_ADMIN --gpus all
+            target_devices: cuda:gpu
           # - name: AMD/HIP
           #   runner: '["Linux", "amdgpu"]'
           #   image_options: -u 1001 --device=/dev/dri --device=/dev/kfd
@@ -270,6 +275,10 @@ jobs:
           #   image_extra_opts: --device=/dev/dri --device=/dev/kfd
           - name: CUDA system
             runner: '["Linux"]'
+            image_extra_opts: --gpus all
+          - name: CUDA 12.6 system
+            runner: '["Linux"]'
+            image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_cuda126_intel_drivers:alldeps
             image_extra_opts: --gpus all
     uses: ./.github/workflows/sycl-linux-run-tests.yml
     with:
