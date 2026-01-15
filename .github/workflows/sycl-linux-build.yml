@@ -340,13 +340,13 @@ jobs:
         extra_lit_opts: --param spirv-backend=True
 
     # odkomentować później
-    # - name: Build E2E tests in Preview Mode
-    #   if: ${{ inputs.e2e_binaries_preview_artifact && !cancelled() && steps.build.conclusion == 'success' }}
-    #   uses: ./devops/actions/run-tests/e2e
-    #   with:
-    #     ref: ${{ inputs.ref || github.sha }}
-    #     testing_mode: build-only
-    #     target_devices: all
-    #     binaries_artifact: ${{ inputs.e2e_binaries_preview_artifact }}
-    #     sycl_compiler: $GITHUB_WORKSPACE/toolchain/bin/clang++
-    #     extra_lit_opts: --param test-preview-mode=True
+    - name: Build E2E tests in Preview Mode
+      if: ${{ inputs.e2e_binaries_preview_artifact && !cancelled() && steps.build.conclusion == 'success' }}
+      uses: ./devops/actions/run-tests/e2e
+      with:
+        ref: ${{ inputs.ref || github.sha }}
+        testing_mode: build-only
+        target_devices: all
+        binaries_artifact: ${{ inputs.e2e_binaries_preview_artifact }}
+        sycl_compiler: $GITHUB_WORKSPACE/toolchain/bin/clang++
+        extra_lit_opts: --param test-preview-mode=True
