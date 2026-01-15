@@ -225,10 +225,19 @@ jobs:
       options: ${{ inputs.image_options }}
     env: ${{ fromJSON(inputs.env) }}
     steps:
-    - name: whoami
+    - name: Install clang
       run: |
         sudo apt install clang
         # nvidia-smi
+    - name: Check CUDA version
+      run: |
+        if command -v nvidia-smi &> /dev/null
+        then
+          nvidia-smi
+          nvcc --version
+        else
+          echo "nvidia-smi could not be found"
+        fi
     - uses: actions/checkout@v6
       with:
         sparse-checkout: |
@@ -308,18 +317,18 @@ jobs:
             cat /usr/local/lib/igc/IGCTAG.txt
           fi
 
-    # - name: Run E2E Tests
-    #   if: inputs.tests_selector == 'e2e'
-    #   uses: ./devops/actions/run-tests/e2e
-    #   timeout-minutes: 60
-    #   with:
-    #     ref: ${{ inputs.tests_ref || inputs.repo_ref || github.sha }}
-    #     binaries_artifact: ${{ inputs.e2e_binaries_artifact }}
-    #     testing_mode: ${{ inputs.e2e_testing_mode }}
-    #     extra_cmake_args: ${{ inputs.extra_cmake_args }}
-    #     target_devices: ${{ inputs.target_devices }}
-    #     extra_lit_opts: ${{ inputs.extra_lit_opts }}
-    #     retention-days: ${{ inputs.retention-days }}
+    - name: Run E2E Tests
+      if: inputs.tests_selector == 'e2e'
+      uses: ./devops/actions/run-tests/e2e
+      timeout-minutes: 60
+      with:
+        ref: ${{ inputs.tests_ref || inputs.repo_ref || github.sha }}
+        binaries_artifact: ${{ inputs.e2e_binaries_artifact }}
+        testing_mode: ${{ inputs.e2e_testing_mode }}
+        extra_cmake_args: ${{ inputs.extra_cmake_args }}
+        target_devices: ${{ inputs.target_devices }}
+        extra_lit_opts: ${{ inputs.extra_lit_opts }}
+        retention-days: ${{ inputs.retention-days }}
 
     - name: Run SYCL CTS Tests
       if: inputs.tests_selector == 'cts'
