@@ -71,40 +71,39 @@ jobs:
 
   # Build and run native cpu e2e tests separately as cannot currently
   # build all the e2e tests
-  # Probably not needed now
-  # build_run_native_cpu_e2e_tests:
-  #   if: ${{ !cancelled() && needs.build.outputs.build_conclusion == 'success' }}
-  #   runs-on: [Linux, build]
-  #   needs: [build]
-  #   container:
-  #     image: ghcr.io/intel/llvm/sycl_ubuntu2404_nightly:latest
-  #     options: -u 1001:1001
-  #   steps:
-  #     - uses: actions/checkout@v6
-  #       with:
-  #         sparse-checkout: |
-  #           devops/
+  build_run_native_cpu_e2e_tests:
+    if: ${{ !cancelled() && needs.build.outputs.build_conclusion == 'success' }}
+    runs-on: [Linux, build]
+    needs: [build]
+    container:
+      image: ghcr.io/luszczewskakasia1/llvm/sycl_ubuntu2404_nightly:latest
+      options: -u 1001:1001
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            devops/
 
-  #     # download build artefact
-  #     - name: Download toolchain
-  #       uses: actions/download-artifact@v7
-  #       with:
-  #         name: sycl_linux_default
-  #     - name: Extract SYCL toolchain
-  #       shell: bash
-  #       run: |
-  #         mkdir toolchain
-  #         tar -xf llvm_sycl.tar.zst -C toolchain
-  #         rm llvm_sycl.tar.zst
-  #     - name: Build and run E2E tests
-  #       uses: ./devops/actions/run-tests/e2e
-  #       with:
-  #         ref: ${{ inputs.ref || github.sha }}
-  #         testing_mode: full
-  #         target_devices: native_cpu:cpu
-  #         sycl_compiler: $GITHUB_WORKSPACE/toolchain/bin/clang++
-  #         extra_lit_opts: --param sycl_build_targets="native_cpu"
-  #         extra_cmake_args: -DSYCL_TEST_E2E_TARGETS="native_cpu:cpu" -DSYCL_TEST_E2E_STANDALONE=ON
+      # download build artefact
+      - name: Download toolchain
+        uses: actions/download-artifact@v7
+        with:
+          name: sycl_linux_default
+      - name: Extract SYCL toolchain
+        shell: bash
+        run: |
+          mkdir toolchain
+          tar -xf llvm_sycl.tar.zst -C toolchain
+          rm llvm_sycl.tar.zst
+      - name: Build and run E2E tests
+        uses: ./devops/actions/run-tests/e2e
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          testing_mode: full
+          target_devices: native_cpu:cpu
+          sycl_compiler: $GITHUB_WORKSPACE/toolchain/bin/clang++
+          extra_lit_opts: --param sycl_build_targets="native_cpu"
+          extra_cmake_args: -DSYCL_TEST_E2E_TARGETS="native_cpu:cpu" -DSYCL_TEST_E2E_STANDALONE=ON
 
   # If a PR changes CUDA adapter, run the build on Ubuntu 22.04 as well.
   # Ubuntu 22.04 container has CUDA 12.1 installed while Ubuntu 24.0 image
@@ -118,7 +117,7 @@ jobs:
   #     build_ref: ${{ github.sha }}
   #     build_cache_root: "/__w/"
   #     build_cache_suffix: "ubuntu22"
-  #     build_image: "ghcr.io/luszczewskakasia1/llvm/ubuntu2204_build:latest"
+  #     build_image: "ghcr.io/intel/llvm/ubuntu2204_build:latest"
   #     changes: ${{ needs.detect_changes.outputs.filters }}
 
   #     toolchain_artifact: sycl_linux_ubuntu22
@@ -131,7 +130,7 @@ jobs:
       FILTER_6_2: ${{ steps.result.outputs.FILTER_6_2 }}
       FILTER_6_3: ${{ steps.result.outputs.FILTER_6_3 }}
     steps:
-    - name: whoami
+    - name: Whoami
       run: |
         whoami 
         ls -la 
@@ -160,20 +159,9 @@ jobs:
           # - name: GEN 12 Integrated
           #   runner: '["Linux", "gen12"]'
           #   target_devices: level_zero:gpu;opencl:gpu;opencl:cpu
-          # - name: NVIDIA/CUDA 12.6
-          #   runner: '["Linux", "cuda"]'
-          #   image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_intel_drivers:alldeps
-          #   image_options: -u 1001 --gpus all --cap-add SYS_ADMIN
-          #   target_devices: cuda:gpu
-          - name: NVIDIA/CUDA 13
+          - name: NVIDIA/CUDA
             runner: '["Linux", "cuda"]'
-            # image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_intel_drivers:alldeps
-            image_options: -u 1001 --gpus all --cap-add SYS_ADMIN
-            target_devices: cuda:gpu
-          - name: NVIDIA/CUDA 12.6
-            runner: '["Linux", "cuda"]'
-            image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_cuda126_intel_drivers:alldeps
-            image_options: -u 1001 --gpus all --cap-add SYS_ADMIN
+            image_options: -u 1001 --privileged --cap-add SYS_ADMIN --gpus all
             target_devices: cuda:gpu
           # - name: AMD/HIP
           #   runner: '["Linux", "amdgpu"]'
@@ -252,7 +240,7 @@ jobs:
   #   with:
   #     name: Benchmark suite precommit testing
   #     runner: '["PVC_PERF"]'
-  #     image: ghcr.io/luszczewskakasia1/llvm/sycl_ubuntu2404_nightly:latest
+  #     image: ghcr.io/intel/llvm/sycl_ubuntu2404_nightly:latest
   #     image_options: -u 1001 --device=/dev/dri -v /dev/dri/by-path:/dev/dri/by-path --privileged --cap-add SYS_ADMIN
   #     target_devices: 'level_zero:gpu'
   #     tests_selector: benchmarks
@@ -280,18 +268,13 @@ jobs:
           # - name: AMD system
           #   runner: '["Linux", "amdgpu"]'
           #   image_extra_opts: --device=/dev/dri --device=/dev/kfd
-          - name: CUDA 13 system
-            runner: '["Linux", "cuda"]'
-            image_extra_opts: --gpus all
-          - name: CUDA 12.6 system
-            runner: '["Linux", "cuda"]'
-            image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_cuda126_intel_drivers:alldeps
+          - name: CUDA system
+            runner: '["Linux"]'
             image_extra_opts: --gpus all
     uses: ./.github/workflows/sycl-linux-run-tests.yml
     with:
       name: Perf tests on ${{ matrix.name }}
-      runner: ${{ matrix.runner }}
-      image: ${{ matrix.image }}
+      runner: ${{ matrix. runner }}
       image_options: -u 1001 --privileged --cap-add SYS_ADMIN ${{ matrix.image_extra_opts }}
       target_devices: all
 
