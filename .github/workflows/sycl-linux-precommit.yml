@@ -130,11 +130,14 @@ jobs:
       FILTER_6_2: ${{ steps.result.outputs.FILTER_6_2 }}
       FILTER_6_3: ${{ steps.result.outputs.FILTER_6_3 }}
     steps:
-    - name: Whoami
+    - name: Check nvidia-smi
+      shell: bash
       run: |
-        whoami 
-        ls -la 
         nvidia-smi
+    - name: Check nvcc version
+      shell: bash
+      run: |
+        nvcc --version
     - uses: actions/checkout@v6
       with:
         sparse-checkout: |
@@ -284,6 +287,7 @@ jobs:
     with:
       name: Perf tests on ${{ matrix.name }}
       runner: ${{ matrix. runner }}
+      image: ${{ matrix.image }}
       image_options: -u 1001 --privileged --cap-add SYS_ADMIN ${{ matrix.image_extra_opts }}
       target_devices: all
 
