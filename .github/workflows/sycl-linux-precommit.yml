@@ -86,6 +86,7 @@ jobs:
         with:
           sparse-checkout: |
             devops/
+
       # download build artefact
       - name: Download toolchain
         uses: actions/download-artifact@v7
@@ -144,9 +145,10 @@ jobs:
         # First, remove comments/empty lines, then join lines with "|" as separator.
         echo FILTER_6_2="$(grep -v '^#\|^\W*$' devops/compat_ci_exclude.sycl-rel-6_2 | paste -sd '|')" >> $GITHUB_OUTPUT
         echo FILTER_6_3="$(grep -v '^#\|^\W*$' devops/compat_ci_exclude.sycl-rel-6_3 | paste -sd '|')" >> $GITHUB_OUTPUT
+
   E2E:
     needs: [build, compat_read_exclude]
-    # if: ${{ !cancelled() && needs.build.outputs.build_conclusion == 'success' }}
+    if: ${{ !cancelled() && needs.build.outputs.build_conclusion == 'success' }}
     permissions:
       contents: write
       packages: read
@@ -161,9 +163,9 @@ jobs:
             runner: '["Linux", "cuda"]'
             image_options: -u 1001 --gpus all --cap-add SYS_ADMIN
             target_devices: cuda:gpu
-          - name: NVIDIA/CUDA with CUDA 12.6
-            runner: '["Linux", "cuda"]'
+          - name: CUDA 12.6
             image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_cuda126_intel_drivers:alldeps
+            runner: '["Linux", "cuda"]'
             image_options: -u 1001 --gpus all --cap-add SYS_ADMIN
             target_devices: cuda:gpu
           # - name: AMD/HIP
@@ -192,20 +194,20 @@ jobs:
           #   extra_lit_opts: --param test-preview-mode=True
 
           # We're in an ABI-breaking window, so these don't make sense for now.
-          - name: ABI compatibility / sycl-rel-6_2
-            runner: '["Linux", "pvc"]'
-            image: ghcr.io/intel/llvm/sycl_prebuilt_tests:sycl-rel-6_2
-            target_devices: level_zero:gpu
-            extra_lit_opts: '--param test-preview-mode=False --filter-out "${{ needs.compat_read_exclude.outputs.FILTER_6_2 }}"'
-            binaries_artifact: 'in-container'
-            skip_run: true
-          - name: ABI compatibility / sycl-rel-6_3
-            runner: '["Linux", "pvc"]'
-            image: ghcr.io/intel/llvm/sycl_prebuilt_tests:sycl-rel-6_3
-            target_devices: level_zero:gpu
-            extra_lit_opts: '--param test-preview-mode=False --filter-out "${{ needs.compat_read_exclude.outputs.FILTER_6_3 }}"'
-            binaries_artifact: 'in-container'
-            skip_run: true
+          # - name: ABI compatibility / sycl-rel-6_2
+          #   runner: '["Linux", "pvc"]'
+          #   image: ghcr.io/intel/llvm/sycl_prebuilt_tests:sycl-rel-6_2
+          #   target_devices: level_zero:gpu
+          #   extra_lit_opts: '--param test-preview-mode=False --filter-out "${{ needs.compat_read_exclude.outputs.FILTER_6_2 }}"'
+          #   binaries_artifact: 'in-container'
+          #   skip_run: true
+          # - name: ABI compatibility / sycl-rel-6_3
+          #   runner: '["Linux", "pvc"]'
+          #   image: ghcr.io/intel/llvm/sycl_prebuilt_tests:sycl-rel-6_3
+          #   target_devices: level_zero:gpu
+          #   extra_lit_opts: '--param test-preview-mode=False --filter-out "${{ needs.compat_read_exclude.outputs.FILTER_6_3 }}"'
+          #   binaries_artifact: 'in-container'
+          #   skip_run: true
 
     uses: ./.github/workflows/sycl-linux-run-tests.yml
     with:
@@ -235,11 +237,11 @@ jobs:
     permissions:
       contents: write
       packages: read
-    # if: |
-    #   !cancelled()
-    #   && needs.build.outputs.build_conclusion == 'success'
-    #   && (contains(github.event.pull_request.labels.*.name, 'run-perf-tests')
-    #       || contains(needs.detect_changes.outputs.filters, 'perf-tests'))
+    if: |
+      !cancelled()
+      && needs.build.outputs.build_conclusion == 'success'
+      && (contains(github.event.pull_request.labels.*.name, 'run-perf-tests')
+          || contains(needs.detect_changes.outputs.filters, 'perf-tests'))
     strategy:
       fail-fast: false
       matrix:
@@ -257,14 +259,13 @@ jobs:
             runner: '["Linux", "cuda"]'
             image_extra_opts: --gpus all
           - name: CUDA 12.6
-            runner: '["Linux", "cuda"]'
             image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_cuda126_intel_drivers:alldeps
+            runner: '["Linux", "cuda"]'
             image_extra_opts: --gpus all
     uses: ./.github/workflows/sycl-linux-run-tests.yml
     with:
       name: Perf tests on ${{ matrix.name }}
-      runner: ${{ matrix.runner }}
-      image: ${{ matrix.image }}
+      runner: ${{ matrix. runner }}
       image_options: -u 1001 --privileged --cap-add SYS_ADMIN ${{ matrix.image_extra_opts }}
       target_devices: all
 
