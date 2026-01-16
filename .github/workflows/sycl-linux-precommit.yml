@@ -86,7 +86,6 @@ jobs:
         with:
           sparse-checkout: |
             devops/
-
       # download build artefact
       - name: Download toolchain
         uses: actions/download-artifact@v7
@@ -127,7 +126,7 @@ jobs:
 
   compat_read_exclude:
     name: Read compatibility testing exclude list
-    runs-on: [Linux, aux-tasks]
+    runs-on: [Linux]
     outputs:
       FILTER_6_2: ${{ steps.result.outputs.FILTER_6_2 }}
       FILTER_6_3: ${{ steps.result.outputs.FILTER_6_3 }}
@@ -145,10 +144,9 @@ jobs:
         # First, remove comments/empty lines, then join lines with "|" as separator.
         echo FILTER_6_2="$(grep -v '^#\|^\W*$' devops/compat_ci_exclude.sycl-rel-6_2 | paste -sd '|')" >> $GITHUB_OUTPUT
         echo FILTER_6_3="$(grep -v '^#\|^\W*$' devops/compat_ci_exclude.sycl-rel-6_3 | paste -sd '|')" >> $GITHUB_OUTPUT
-
   E2E:
     needs: [build, compat_read_exclude]
-    if: ${{ !cancelled() && needs.build.outputs.build_conclusion == 'success' }}
+    # if: ${{ !cancelled() && needs.build.outputs.build_conclusion == 'success' }}
     permissions:
       contents: write
       packages: read
@@ -161,6 +159,11 @@ jobs:
           #   target_devices: level_zero:gpu;opencl:gpu;opencl:cpu
           - name: NVIDIA/CUDA
             runner: '["Linux", "cuda"]'
+            image_options: -u 1001 --gpus all --cap-add SYS_ADMIN
+            target_devices: cuda:gpu
+          - name: NVIDIA/CUDA with CUDA 12.6
+            runner: '["Linux", "cuda"]'
+            image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_cuda126_intel_drivers:alldeps
             image_options: -u 1001 --gpus all --cap-add SYS_ADMIN
             target_devices: cuda:gpu
           # - name: AMD/HIP
@@ -232,11 +235,11 @@ jobs:
     permissions:
       contents: write
       packages: read
-    if: |
-      !cancelled()
-      && needs.build.outputs.build_conclusion == 'success'
-      && (contains(github.event.pull_request.labels.*.name, 'run-perf-tests')
-          || contains(needs.detect_changes.outputs.filters, 'perf-tests'))
+    # if: |
+    #   !cancelled()
+    #   && needs.build.outputs.build_conclusion == 'success'
+    #   && (contains(github.event.pull_request.labels.*.name, 'run-perf-tests')
+    #       || contains(needs.detect_changes.outputs.filters, 'perf-tests'))
     strategy:
       fail-fast: false
       matrix:
@@ -253,10 +256,15 @@ jobs:
           - name: CUDA system
             runner: '["Linux", "cuda"]'
             image_extra_opts: --gpus all
+          - name: CUDA 12.6
+            runner: '["Linux", "cuda"]'
+            image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_cuda126_intel_drivers:alldeps
+            image_extra_opts: --gpus all
     uses: ./.github/workflows/sycl-linux-run-tests.yml
     with:
       name: Perf tests on ${{ matrix.name }}
-      runner: ${{ matrix. runner }}
+      runner: ${{ matrix.runner }}
+      image: ${{ matrix.image }}
       image_options: -u 1001 --privileged --cap-add SYS_ADMIN ${{ matrix.image_extra_opts }}
       target_devices: all
 
