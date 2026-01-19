@@ -171,6 +171,11 @@ jobs:
             image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_cuda126_intel_drivers:alldeps
             image_options: -u 1001 --privileged --cap-add SYS_ADMIN --gpus all
             target_devices: cuda:gpu
+          # - name: NVIDIA/CUDA 12.6
+          #   runner: '["Linux", "cuda"]'
+          #   image: ghcr.io/luszczewskakasia1/llvm/ubuntu2404_cuda126_intel_drivers:alldeps
+          #   image_options: -u 1001 --privileged --cap-add SYS_ADMIN --gpus all
+          #   target_devices: cuda:gpu
           # - name: AMD/HIP
           #   runner: '["Linux", "amdgpu"]'
           #   image_options: -u 1001 --device=/dev/dri --device=/dev/kfd
