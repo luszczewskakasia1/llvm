@@ -57,8 +57,8 @@ jobs:
           #   file: ubuntu2404_build
           #   tag: latest
           #   build_args: ""
-          - name: Build Ubuntu 24.04 Docker image with CUDA 12.6
-            file: ubuntu2404_cuda126_build
+          - name: Build Ubuntu 24.04 Docker image with CUDA 13.1
+            file: ubuntu2404_build
             tag: latest
             build_args: ""
     steps:
@@ -105,11 +105,11 @@ jobs:
           #   build_args: |
           #     base_image=ghcr.io/intel/llvm/ubuntu2204_build
           #     base_tag=latest
-          - name: Build + Intel Drivers Ubuntu 24.04 + CUDA 12.6 Docker image
-            file: ubuntu2404_cuda126_intel_drivers
+          - name: Build + Intel Drivers Ubuntu 24.04 + CUDA 13.1 Docker image
+            file: ubuntu2404_intel_drivers
             tag: alldeps
             build_args: |
-              base_image=ghcr.io/luszczewskakasia1/llvm/ubuntu2404_cuda126_build
+              base_image=ghcr.io/luszczewskakasia1/llvm/ubuntu2404_build
               base_tag=latest
     steps:
       - name: Checkout
