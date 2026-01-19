@@ -4,6 +4,9 @@ on:
   # We rely on "Fork pull request workflows from outside collaborators" -
   # "Require approval for all outside collaborators" at
   # https://github.com/intel/llvm/settings/actions for security.
+  push:
+    branches:
+    - test-cuda13-docker
   pull_request:
     branches:
     - sycl
@@ -46,12 +49,12 @@ concurrency:
 permissions: read-all
 
 jobs:
-  detect_changes:
-    uses: ./.github/workflows/sycl-detect-changes.yml
+  # detect_changes:
+  #   uses: ./.github/workflows/sycl-detect-changes.yml
 
   build:
     name: Self build
-    needs: [detect_changes]
+    # needs: [detect_changes]
     if: success()
     uses: ./.github/workflows/sycl-linux-build.yml
     with:
@@ -59,7 +62,7 @@ jobs:
       build_cache_root: "/__w/"
       build_cache_suffix: "default"
       # Docker image has last nightly pre-installed and added to the PATH
-      build_image: "ghcr.io/intel/llvm/sycl_ubuntu2404_nightly:latest"
+      build_image: "ghcr.io/luszczewskakasia1/llvm/sycl_ubuntu2404_nightly:latest"
       cc: clang
       cxx: clang++
       changes: ${{ needs.detect_changes.outputs.filters }}
@@ -76,7 +79,7 @@ jobs:
     runs-on: [Linux, build]
     needs: [build]
     container:
-      image: ghcr.io/intel/llvm/sycl_ubuntu2404_nightly:latest
+      image: ghcr.io/luszczewskakasia1/llvm/sycl_ubuntu2404_nightly:latest
       options: -u 1001:1001
     steps:
       - uses: actions/checkout@v6
@@ -109,22 +112,22 @@ jobs:
   # Ubuntu 22.04 container has CUDA 12.1 installed while Ubuntu 24.0 image
   # has CUDA 12.6.1 installed.
   # The idea is to ensure that the code works with both CUDA versions.
-  build_ubuntu2204:
-    needs: [detect_changes]
-    if: ${{ !cancelled() && contains(needs.detect_changes.outputs.filters, 'ur_cuda_adapter') }}
-    uses: ./.github/workflows/sycl-linux-build.yml
-    with:
-      build_ref: ${{ github.sha }}
-      build_cache_root: "/__w/"
-      build_cache_suffix: "ubuntu22"
-      build_image: "ghcr.io/intel/llvm/ubuntu2204_build:latest"
-      changes: ${{ needs.detect_changes.outputs.filters }}
+  # build_ubuntu2204:
+  #   needs: [detect_changes]
+  #   if: ${{ !cancelled() && contains(needs.detect_changes.outputs.filters, 'ur_cuda_adapter') }}
+  #   uses: ./.github/workflows/sycl-linux-build.yml
+  #   with:
+  #     build_ref: ${{ github.sha }}
+  #     build_cache_root: "/__w/"
+  #     build_cache_suffix: "ubuntu22"
+  #     build_image: "ghcr.io/intel/llvm/ubuntu2204_build:latest"
+  #     changes: ${{ needs.detect_changes.outputs.filters }}
 
-      toolchain_artifact: sycl_linux_ubuntu22
+  #     toolchain_artifact: sycl_linux_ubuntu22
 
   compat_read_exclude:
     name: Read compatibility testing exclude list
-    runs-on: [Linux, aux-tasks]
+    runs-on: [Linux]
     outputs:
       FILTER_6_2: ${{ steps.result.outputs.FILTER_6_2 }}
       FILTER_6_3: ${{ steps.result.outputs.FILTER_6_3 }}
@@ -144,7 +147,7 @@ jobs:
         echo FILTER_6_3="$(grep -v '^#\|^\W*$' devops/compat_ci_exclude.sycl-rel-6_3 | paste -sd '|')" >> $GITHUB_OUTPUT
 
   E2E:
-    needs: [build, detect_changes, compat_read_exclude]
+    needs: [build, compat_read_exclude]
     if: ${{ !cancelled() && needs.build.outputs.build_conclusion == 'success' }}
     permissions:
       contents: write
@@ -153,53 +156,53 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Intel / GEN 12 Integrated
-            runner: '["Linux", "gen12"]'
-            target_devices: level_zero:gpu;opencl:gpu;opencl:cpu
+          # - name: Intel / GEN 12 Integrated
+          #   runner: '["Linux", "gen12"]'
+          #   target_devices: level_zero:gpu;opencl:gpu;opencl:cpu
           - name: NVIDIA/CUDA
             runner: '["Linux", "cuda"]'
             image_options: -u 1001 --gpus all --cap-add SYS_ADMIN
             target_devices: cuda:gpu
-          - name: AMD/HIP
-            runner: '["Linux", "amdgpu"]'
-            image_options: -u 1001 --device=/dev/dri --device=/dev/kfd
-            target_devices: hip:gpu
-            extra_lit_opts: -j 1
-          - name: Intel / Arc A-Series Graphics
-            runner: '["Linux", "arc"]'
-            target_devices: level_zero:gpu;opencl:gpu;level_zero_v2:gpu         
-            env: '{"LIT_FILTER":"Matrix/"}'
-          - name: Intel / Ponte Vecchio GPU
-            runner: '["Linux", "pvc"]'
-            target_devices: level_zero:gpu;opencl:gpu;level_zero_v2:gpu
-          - name: Intel / Battlemage Graphics
-            runner: '["Linux", "bmg"]'
-            target_devices: level_zero_v1:gpu;level_zero_v2:gpu
-          - name: Preview Mode
-            runner: '["Linux", "gen12"]'
-            target_devices: level_zero:gpu;opencl:gpu;opencl:cpu
-            extra_lit_opts: --param test-preview-mode=True
-            binaries_artifact: e2e_bin_preview
-          - name: Intel / ARL with L0 v2
-            runner: '["Linux", "arl"]'
-            target_devices: level_zero_v2:arch-intel_gpu_mtl_u
-            extra_lit_opts: --param test-preview-mode=True
+          # - name: AMD/HIP
+          #   runner: '["Linux", "amdgpu"]'
+          #   image_options: -u 1001 --device=/dev/dri --device=/dev/kfd
+          #   target_devices: hip:gpu
+          #   extra_lit_opts: -j 1
+          # - name: Intel / Arc A-Series Graphics
+          #   runner: '["Linux", "arc"]'
+          #   target_devices: level_zero:gpu;opencl:gpu;level_zero_v2:gpu         
+          #   env: '{"LIT_FILTER":"Matrix/"}'
+          # - name: Intel / Ponte Vecchio GPU
+          #   runner: '["Linux", "pvc"]'
+          #   target_devices: level_zero:gpu;opencl:gpu;level_zero_v2:gpu
+          # - name: Intel / Battlemage Graphics
+          #   runner: '["Linux", "bmg"]'
+          #   target_devices: level_zero_v1:gpu;level_zero_v2:gpu
+          # - name: Preview Mode
+          #   runner: '["Linux", "gen12"]'
+          #   target_devices: level_zero:gpu;opencl:gpu;opencl:cpu
+          #   extra_lit_opts: --param test-preview-mode=True
+          #   binaries_artifact: e2e_bin_preview
+          # - name: Intel / ARL with L0 v2
+          #   runner: '["Linux", "arl"]'
+          #   target_devices: level_zero_v2:arch-intel_gpu_mtl_u
+          #   extra_lit_opts: --param test-preview-mode=True
 
-          # We're in an ABI-breaking window, so these don't make sense for now.
-          - name: ABI compatibility / sycl-rel-6_2
-            runner: '["Linux", "pvc"]'
-            image: ghcr.io/intel/llvm/sycl_prebuilt_tests:sycl-rel-6_2
-            target_devices: level_zero:gpu
-            extra_lit_opts: '--param test-preview-mode=False --filter-out "${{ needs.compat_read_exclude.outputs.FILTER_6_2 }}"'
-            binaries_artifact: 'in-container'
-            skip_run: true
-          - name: ABI compatibility / sycl-rel-6_3
-            runner: '["Linux", "pvc"]'
-            image: ghcr.io/intel/llvm/sycl_prebuilt_tests:sycl-rel-6_3
-            target_devices: level_zero:gpu
-            extra_lit_opts: '--param test-preview-mode=False --filter-out "${{ needs.compat_read_exclude.outputs.FILTER_6_3 }}"'
-            binaries_artifact: 'in-container'
-            skip_run: true
+          # # We're in an ABI-breaking window, so these don't make sense for now.
+          # - name: ABI compatibility / sycl-rel-6_2
+          #   runner: '["Linux", "pvc"]'
+          #   image: ghcr.io/intel/llvm/sycl_prebuilt_tests:sycl-rel-6_2
+          #   target_devices: level_zero:gpu
+          #   extra_lit_opts: '--param test-preview-mode=False --filter-out "${{ needs.compat_read_exclude.outputs.FILTER_6_2 }}"'
+          #   binaries_artifact: 'in-container'
+          #   skip_run: true
+          # - name: ABI compatibility / sycl-rel-6_3
+          #   runner: '["Linux", "pvc"]'
+          #   image: ghcr.io/intel/llvm/sycl_prebuilt_tests:sycl-rel-6_3
+          #   target_devices: level_zero:gpu
+          #   extra_lit_opts: '--param test-preview-mode=False --filter-out "${{ needs.compat_read_exclude.outputs.FILTER_6_3 }}"'
+          #   binaries_artifact: 'in-container'
+          #   skip_run: true
 
     uses: ./.github/workflows/sycl-linux-run-tests.yml
     with:
@@ -225,7 +228,7 @@ jobs:
       env: ${{ matrix.env || (contains(needs.detect_changes.outputs.filters, 'esimd') && '{}' || '{"LIT_FILTER_OUT":"ESIMD/"}') }}
 
   E2E-with-new-offload-model:
-    needs: [build, detect_changes, compat_read_exclude]
+    needs: [build, compat_read_exclude]
     if: |
       !cancelled() &&
       needs.build.outputs.build_conclusion == 'success' &&
@@ -237,27 +240,27 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Intel / GEN 12 Integrated
-            runner: '["Linux", "gen12"]'
-            target_devices: opencl:cpu;opencl:gpu
-          - name: Intel / Arc A-Series Graphics
-            runner: '["Linux", "arc"]'
-            target_devices: level_zero:gpu
-          - name: Intel / Ponte Vecchio GPU
-            runner: '["Linux", "pvc"]'
-            target_devices: level_zero:gpu
-          - name: Intel / Battlemage Graphics
-            runner: '["Linux", "bmg"]'
-            target_devices: level_zero_v2:gpu
+          # - name: Intel / GEN 12 Integrated
+          #   runner: '["Linux", "gen12"]'
+          #   target_devices: opencl:cpu;opencl:gpu
+          # - name: Intel / Arc A-Series Graphics
+          #   runner: '["Linux", "arc"]'
+          #   target_devices: level_zero:gpu
+          # - name: Intel / Ponte Vecchio GPU
+          #   runner: '["Linux", "pvc"]'
+          #   target_devices: level_zero:gpu
+          # - name: Intel / Battlemage Graphics
+          #   runner: '["Linux", "bmg"]'
+          #   target_devices: level_zero_v2:gpu
           - name: NVIDIA/CUDA
             runner: '["Linux", "cuda"]'
             image_options: -u 1001 --gpus all --cap-add SYS_ADMIN
             target_devices: cuda:gpu
-          - name: AMD/HIP
-            runner: '["Linux", "amdgpu"]'
-            image_options: -u 1001 --device=/dev/dri --device=/dev/kfd
-            target_devices: hip:gpu
-            extra_lit_opts: -j 1
+          # - name: AMD/HIP
+          #   runner: '["Linux", "amdgpu"]'
+          #   image_options: -u 1001 --device=/dev/dri --device=/dev/kfd
+          #   target_devices: hip:gpu
+          #   extra_lit_opts: -j 1
 
     uses: ./.github/workflows/sycl-linux-run-tests.yml
     with:
@@ -276,7 +279,7 @@ jobs:
 
 
   test-perf:
-    needs: [build, detect_changes]
+    needs: [build]
     permissions:
       contents: write
       packages: read
@@ -289,22 +292,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Intel GEN12 Graphics system
-            runner: '["Linux", "gen12"]'
-            image_extra_opts: --device=/dev/dri
-          - name: Intel Arc A-Series Graphics system
-            runner: '["Linux", "arc"]'
-            image_extra_opts: --device=/dev/dri
-          - name: AMD system
-            runner: '["Linux", "amdgpu"]'
-            image_extra_opts: --device=/dev/dri --device=/dev/kfd
+          # - name: Intel GEN12 Graphics system
+          #   runner: '["Linux", "gen12"]'
+          #   image_extra_opts: --device=/dev/dri
+          # - name: Intel Arc A-Series Graphics system
+          #   runner: '["Linux", "arc"]'
+          #   image_extra_opts: --device=/dev/dri
+          # - name: AMD system
+          #   runner: '["Linux", "amdgpu"]'
+          #   image_extra_opts: --device=/dev/dri --device=/dev/kfd
           - name: CUDA system
             runner: '["Linux", "cuda"]'
             image_extra_opts: --gpus all
     uses: ./.github/workflows/sycl-linux-run-tests.yml
     with:
       name: Perf tests on ${{ matrix.name }}
-      runner: ${{ matrix. runner }}
+      runner: ${{ matrix.runner }}
       image_options: -u 1001 --privileged --cap-add SYS_ADMIN ${{ matrix.image_extra_opts }}
       target_devices: all
 

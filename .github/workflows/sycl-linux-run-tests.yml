@@ -233,7 +233,7 @@ jobs:
       contents: write
       packages: read
     container:
-      image: ${{ inputs.image || 'ghcr.io/intel/llvm/ubuntu2404_intel_drivers:alldeps'}}
+      image: ${{ inputs.image || 'ghcr.io/luszczewskakasia1/llvm/ubuntu2404_intel_drivers:alldeps'}}
       options: ${{ inputs.image_options }}
     env: ${{ fromJSON(inputs.env) }}
     steps:
