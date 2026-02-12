@@ -22,6 +22,8 @@ ur_result_t mapErrorUR(CUresult Result) {
   switch (Result) {
   case CUDA_SUCCESS:
     return UR_RESULT_SUCCESS;
+  case CUDA_ERROR_NOT_SUPPORTED:
+    return UR_RESULT_ERROR_UNSUPPORTED_FEATURE;
   case CUDA_ERROR_NOT_PERMITTED:
     return UR_RESULT_ERROR_INVALID_OPERATION;
   case CUDA_ERROR_INVALID_CONTEXT:
