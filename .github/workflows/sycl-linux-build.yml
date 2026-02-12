@@ -187,6 +187,98 @@ jobs:
     - name: Setup oneAPI env
       if: ${{ inputs.cc == 'icx' || inputs.cxx == 'icpx' }}
       uses: ./devops/actions/setup_linux_oneapi_env
+    - name: Detect nvcc version
+      id: nvcc_info
+      run: |
+        if command -v nvcc &> /dev/null; then
+          echo "NVCC found, version: $(nvcc --version)"
+          echo "NVCC_VERSION=$(nvcc --version | grep -oP 'release \K[0-9]+')" >> $GITHUB_OUTPUT
+        else
+          echo "NVCC not found"
+          echo "NVCC_VERSION=0" >> $GITHUB_OUTPUT
+        fi
+    - name: install nvcc 13 if needed
+      env:
+        NVCC_VERSION: ${{ steps.nvcc_info.outputs.NVCC_VERSION }}
+      run: |
+        set -euo pipefail
+
+        required_major=13
+        current_major="${NVCC_VERSION:-0}"
+        if [[ "$current_major" =~ ^[0-9]+$ ]] && (( current_major >= required_major )); then
+          echo "nvcc major version ${current_major} >= ${required_major}; nothing to install"
+          exit 0
+        fi
+
+        if ! command -v sudo &>/dev/null && [[ "$(id -u)" != "0" ]]; then
+          echo "nvcc is missing or too old (major=${current_major}). Need to install CUDA toolkit ${required_major}.x, but sudo is not available and user is not root."
+          exit 1
+        fi
+
+        SUDO=""
+        if [[ "$(id -u)" != "0" ]]; then
+          SUDO="sudo"
+        fi
+
+        . /etc/os-release
+        if [[ "${ID:-}" != "ubuntu" ]]; then
+          echo "Unsupported OS ID=${ID:-unknown}; expected ubuntu"
+          exit 1
+        fi
+
+        ubuntu_ver="${VERSION_ID//./}"
+        repo="ubuntu${ubuntu_ver}"
+        arch="x86_64"
+        repo_url="https://developer.download.nvidia.com/compute/cuda/repos/${repo}/${arch}"
+
+        echo "Installing CUDA toolkit ${required_major}.x from ${repo_url} (current nvcc major=${current_major})"
+
+        $SUDO apt-get update
+        $SUDO apt-get install -y --no-install-recommends ca-certificates curl gnupg
+
+        curl -fsSL "${repo_url}/cuda-keyring_1.1-1_all.deb" -o /tmp/cuda-keyring.deb
+        $SUDO dpkg -i /tmp/cuda-keyring.deb
+
+        # The base image may already have the CUDA repo configured without a
+        # Signed-By option. Installing cuda-keyring adds a Signed-By entry,
+        # and apt will error if both variants exist for the same repo.
+        keyring="/usr/share/keyrings/cuda-archive-keyring.gpg"
+        canonical_list="/etc/apt/sources.list.d/cuda-${repo}-${arch}.list"
+        escaped_repo_url="$(printf '%s\n' "${repo_url}" | sed 's/[\/&]/\\&/g')"
+        for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do
+          [[ -e "$f" ]] || continue
+          if grep -Fq "${repo_url}" "$f"; then
+            $SUDO sed -i "/${escaped_repo_url}/d" "$f"
+          fi
+        done
+        echo "deb [signed-by=${keyring}] ${repo_url}/ /" | $SUDO tee "${canonical_list}" >/dev/null
+
+        $SUDO apt-get update
+
+        # Install the newest available 13.x toolkit meta-package.
+        installed=0
+        for pkg in cuda-toolkit-13-3 cuda-toolkit-13-2 cuda-toolkit-13-1 cuda-toolkit-13-0 cuda-toolkit-13; do
+          if apt-cache show "$pkg" &>/dev/null; then
+            $SUDO apt-get install -y --no-install-recommends "$pkg"
+            installed=1
+            break
+          fi
+        done
+
+        if (( installed == 0 )); then
+          echo "No CUDA 13.x toolkit package found in ${repo_url}."
+          echo "Available cuda-toolkit packages:"
+          apt-cache search '^cuda-toolkit-[0-9]+' | head -n 50 || true
+          exit 1
+        fi
+
+        hash -r || true
+        if command -v nvcc &>/dev/null; then
+          echo "NVCC after install: $(nvcc --version)"
+        else
+          echo "nvcc still not found after installing CUDA toolkit."
+          exit 1
+        fi
     - name: Configure
       # Setting `CMAKE_INSTALL_PREFIX` is important because that's the location
       # where `sycl-linux-run-tests.yml` unpacks the toolchain to. That location
