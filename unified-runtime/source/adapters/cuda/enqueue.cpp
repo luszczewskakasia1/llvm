@@ -91,8 +91,10 @@ void setCuMemAdvise(CUdeviceptr DevPtr, size_t Size,
     if (URAdviceFlags & FlagPair.first) {
 #if CUDA_VERSION >= 13000
       CUmemLocation LocationHost;
-      LocationHost.id = 0; // ignored with HOST_NUMA_CURRENT
-      LocationHost.type = CU_MEM_LOCATION_TYPE_HOST_NUMA_CURRENT;
+    // cuMemAdvise_v2 only accepts DEVICE or HOST locations; using any of the
+    // HOST_NUMA* location types results in CUDA_ERROR_INVALID_VALUE.
+    LocationHost.id = 0; // ignored for HOST
+    LocationHost.type = CU_MEM_LOCATION_TYPE_HOST;
 #else
       int LocationHost = CU_DEVICE_CPU;
 #endif

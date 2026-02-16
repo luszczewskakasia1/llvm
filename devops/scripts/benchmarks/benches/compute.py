@@ -6,6 +6,7 @@
 import csv
 import io
 import math
+import os
 from enum import Enum
 from itertools import product
 from pathlib import Path
@@ -61,8 +62,8 @@ class ComputeBench(Suite):
         return "https://github.com/intel/compute-benchmarks.git"
 
     def git_hash(self) -> str:
-        # Jan 9, 2026
-        return "172365d0761d5a73cb4283087e561f8832641980"
+        # Jan 28, 2026
+        return "1cd76b970710b807463291974e41095c94baf354"
 
     def setup(self) -> None:
         if options.sycl is None:
@@ -89,6 +90,13 @@ class ComputeBench(Suite):
             f"-DCMAKE_CXX_COMPILER=clang++",
             f"-DCMAKE_C_COMPILER=clang",
         ]
+
+        is_gdb_mode = os.environ.get("LLVM_BENCHMARKS_USE_GDB", "") == "1"
+        if is_gdb_mode:
+            extra_args += [
+                f"-DCMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=-O2 -g -DNDEBUG -fdebug-info-for-profiling",
+            ]
+
         if options.ur_adapter == "cuda":
             extra_args += [
                 "-DBUILD_SYCL_WITH_CUDA=ON",
@@ -208,16 +216,20 @@ class ComputeBench(Suite):
             measure_completion_time,
             use_events,
         ) in submit_graph_params:
-            # SYCL only supports graph mode, UR supports only emulation with command buffers,
-            # and L0 supports both modes via graph and command list APIs.
+            # SYCL only supports graph mode, UR & L0 support both emulated
+            # and non-emulated graph APIs.
             if runtime == RUNTIMES.SYCL or runtime == RUNTIMES.SYCL_PREVIEW:
                 emulate_graphs = [0]
-            elif runtime == RUNTIMES.UR:
-                emulate_graphs = [1]
-            else:  # level-zero
-                # SubmitGraph with L0 graph segfaults on PVC
+            else:  # level-zero and unified-runtime
+                # SubmitGraph with L0 / UR graph segfaults on PVC
                 device_arch = getattr(options, "device_architecture", "")
-                emulate_graphs = [1] if "pvc" in device_arch else [0, 1]
+                # UR currently only supports EmulateGraphs=0 with in-order queue and Level-Zero V2 Adapter
+                skip_ur_native_graph = runtime == RUNTIMES.UR and (
+                    in_order_queue == 0 or options.ur_adapter != "level_zero_v2"
+                )
+                emulate_graphs = (
+                    [1] if "pvc" in device_arch or skip_ur_native_graph else [0, 1]
+                )
             for emulate_graph in emulate_graphs:
                 benches.append(
                     GraphApiSubmitGraph(
@@ -265,14 +277,10 @@ class ComputeBench(Suite):
             )
             benches.append(QueueMemcpy(self, "Device", "Device", 1024, profiler_type))
             benches.append(
-                ExecImmediateCopyQueue(
-                    self, 0, 1, "Device", "Device", 1024, profiler_type
-                )
+                ExecImmCopy(self, 0, 1, "Device", "Device", 1024, profiler_type)
             )
             benches.append(
-                ExecImmediateCopyQueue(
-                    self, 1, 1, "Device", "Host", 1024, profiler_type
-                )
+                ExecImmCopy(self, 1, 1, "Device", "Host", 1024, profiler_type)
             )
 
         # Add RecordAndReplay benchmarks
@@ -382,7 +390,7 @@ class ComputeBench(Suite):
 
         # Add TorchMultiQueue benchmarks
         for runtime in filter(lambda x: x != RUNTIMES.UR, RUNTIMES):
-            for profiler_type in list(PROFILERS):
+            for profiler_type, measure_completion in product(list(PROFILERS), [0, 1]):
 
                 def createTorchMultiQueueBench(variant_name: str, **kwargs):
                     return TorchMultiQueue(
@@ -399,24 +407,30 @@ class ComputeBench(Suite):
                         kernelWGCount=4096,
                         kernelWGSize=512,
                         kernelsPerQueue=20,
+                        useProfiling=0,
+                        measureCompletion=measure_completion,
                     ),
                     createTorchMultiQueueBench(
                         "medium",
                         kernelWGCount=512,
                         kernelWGSize=256,
                         kernelsPerQueue=10,
+                        useProfiling=0,
+                        measureCompletion=measure_completion,
                     ),
                     createTorchMultiQueueBench(
                         "small",
                         kernelWGCount=256,
                         kernelWGSize=128,
                         kernelsPerQueue=4,
+                        useProfiling=0,
+                        measureCompletion=measure_completion,
                     ),
                 ]
 
         # Add TorchSlmSize benchmarks
         for runtime in filter(lambda x: x != RUNTIMES.UR, RUNTIMES):
-            for profiler_type in list(PROFILERS):
+            for profiler_type, measure_completion in product(list(PROFILERS), [0, 1]):
 
                 def createTorchSlmSizeBench(variant_name: str, **kwargs):
                     return TorchSlmSize(
@@ -432,16 +446,22 @@ class ComputeBench(Suite):
                         "small",
                         kernelBatchSize=512,
                         slmNum=1,
+                        useProfiling=0,
+                        measureCompletion=measure_completion,
                     ),
                     createTorchSlmSizeBench(
                         "medium",
                         kernelBatchSize=512,
                         slmNum=1024,
+                        useProfiling=0,
+                        measureCompletion=measure_completion,
                     ),
                     createTorchSlmSizeBench(
                         "large",
                         kernelBatchSize=512,
                         slmNum=16384,
+                        useProfiling=0,
+                        measureCompletion=measure_completion,
                     ),
                 ]
 
@@ -734,6 +754,12 @@ class ComputeBenchmark(Benchmark):
         return runtimes
 
     def __parse_output(self, output: str) -> list[tuple[float, float]]:
+        is_gdb_mode = os.environ.get("LLVM_BENCHMARKS_USE_GDB", "") == "1"
+
+        if is_gdb_mode:
+            log.info(output)
+            return [(0.0, 0.0)]
+
         csv_file = io.StringIO(output)
         reader = csv.reader(csv_file)
         next(reader, None)
@@ -881,7 +907,7 @@ class SubmitKernel(ComputeBenchmark):
         ]
 
 
-class ExecImmediateCopyQueue(ComputeBenchmark):
+class ExecImmCopy(ComputeBenchmark):
     def __init__(
         self, bench, ioq, isCopyOnly, source, destination, size, profiler_type
     ):
@@ -896,17 +922,17 @@ class ExecImmediateCopyQueue(ComputeBenchmark):
         super().__init__(
             bench,
             "api_overhead_benchmark_sycl",
-            "ExecImmediateCopyQueue",
+            "ExecImmCopy",
             profiler_type=profiler_type,
         )
 
     def name(self):
         order = "in order" if self._ioq else "out of order"
-        return f"api_overhead_benchmark_sycl ExecImmediateCopyQueue {order} from {self._source} to {self._destination}, size {self._size}{self._cpu_count_str()}"
+        return f"api_overhead_benchmark_sycl ExecImmCopy {order} from {self._source} to {self._destination}, size {self._size}{self._cpu_count_str()}"
 
     def display_name(self) -> str:
         order = "in order" if self._ioq else "out of order"
-        return f"SYCL ExecImmediateCopyQueue {order} from {self._source} to {self._destination}, size {self._size}{self._cpu_count_str(separator=',')}"
+        return f"SYCL ExecImmCopy {order} from {self._source} to {self._destination}, size {self._size}{self._cpu_count_str(separator=',')}"
 
     def description(self) -> str:
         order = "in-order" if self._ioq else "out-of-order"
@@ -929,7 +955,7 @@ class ExecImmediateCopyQueue(ComputeBenchmark):
             f"--src={self._source}",
             f"--dst={self._destination}",
             f"--size={self._size}",
-            "--withCopyOffload=0",
+            "--CopyOffload=0",
             f"--profilerType={self._profiler_type.value}",
         ]
 
@@ -1229,7 +1255,6 @@ class StreamMemory(ComputeBenchmark):
             "--multiplier=1",
             "--vectorSize=1",
             "--lws=256",
-            "--prefetch=0",
         ]
 
 
@@ -1436,7 +1461,12 @@ class GraphApiSubmitGraph(ComputeBenchmark):
         self._use_events = useEvents
         self._use_host_tasks = useHostTasks
         self._emulate_graphs = emulate_graphs
-        self._emulate_str = " with graph emulation" if self._emulate_graphs else ""
+        self._native_str = (
+            " native recording"
+            if self._emulate_graphs == 0
+            and (runtime == RUNTIMES.UR or runtime == RUNTIMES.LEVEL_ZERO)
+            else ""
+        )
         self._ioq_str = "in order" if self._in_order_queue else "out of order"
         self._measure_str = (
             " with measure completion" if self._measure_completion_time else ""
@@ -1455,13 +1485,13 @@ class GraphApiSubmitGraph(ComputeBenchmark):
         )
 
     def name(self):
-        return f"graph_api_benchmark_{self._runtime.value} SubmitGraph{self._use_events_str}{self._host_tasks_str}{self._emulate_str} numKernels:{self._num_kernels} ioq {self._in_order_queue} measureCompletion {self._measure_completion_time}{self._cpu_count_str()}"
+        return f"graph_api_benchmark_{self._runtime.value} SubmitGraph{self._native_str}{self._use_events_str}{self._host_tasks_str} numKernels:{self._num_kernels} ioq {self._in_order_queue} measureCompletion {self._measure_completion_time}{self._cpu_count_str()}"
 
     def display_name(self) -> str:
-        return f"{self._runtime.value.upper()} SubmitGraph {self._ioq_str}{self._measure_str}{self._use_events_str}{self._host_tasks_str}{self._emulate_str}, {self._num_kernels} kernels{self._cpu_count_str(separator=',')}"
+        return f"{self._runtime.value.upper()} SubmitGraph{self._native_str} {self._ioq_str}{self._measure_str}{self._use_events_str}{self._host_tasks_str}, {self._num_kernels} kernels{self._cpu_count_str(separator=',')}"
 
     def explicit_group(self):
-        return f"SubmitGraph {self._ioq_str}{self._measure_str}{self._use_events_str}{self._host_tasks_str}, {self._num_kernels} kernels{self._cpu_count_str(separator=',')}"
+        return f"SubmitGraph{self._native_str} {self._ioq_str}{self._measure_str}{self._use_events_str}{self._host_tasks_str}, {self._num_kernels} kernels{self._cpu_count_str(separator=',')}"
 
     def description(self) -> str:
         return (

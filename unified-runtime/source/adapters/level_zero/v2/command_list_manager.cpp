@@ -1061,8 +1061,10 @@ ur_result_t ur_command_list_manager::appendNativeCommandExp(
 
 void ur_command_list_manager::recordSubmittedKernel(
     ur_kernel_handle_t hKernel) {
-  submittedKernels.push_back(hKernel);
-  hKernel->RefCount.retain();
+  auto [_, inserted] = submittedKernels.insert(hKernel);
+  if (inserted) {
+    hKernel->RefCount.retain();
+  }
 }
 
 ze_command_list_handle_t ur_command_list_manager::getZeCommandList() {
@@ -1374,7 +1376,13 @@ ur_result_t ur_command_list_manager::isGraphCaptureActive(bool *pResult) {
     return UR_RESULT_ERROR_UNSUPPORTED_FEATURE;
   }
 
-  *pResult = graphCapture.isActive();
+  ze_result_t ZeResult =
+      ZE_CALL_NOCHECK(hContext.get()
+                          ->getPlatform()
+                          ->ZeGraphExt.zeCommandListIsGraphCaptureEnabledExp,
+                      (getZeCommandList()));
+
+  *pResult = (ZeResult == ZE_RESULT_QUERY_TRUE);
 
   return UR_RESULT_SUCCESS;
 }
