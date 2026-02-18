@@ -9,10 +9,14 @@ COPY scripts/install_build_tools.sh /install.sh
 RUN /install.sh
 
 # Install CUDA 13.1 toolkit
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends cuda-toolkit-13-1 && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+RUN echo "=== CUDA version ===" && \
+    nvcc --version && \
+    echo "" && \
+    echo "=== CUDA toolkit packages ===" && \
+    dpkg -l | grep -i "cuda-toolkit" && \
+    echo "" && \
+    echo "=== All CUDA packages ===" && \
+    dpkg -l | grep -i "^ii.*cuda-" | head -30
 
 # libzstd-dev installed by default on Ubuntu 24.04 is not compiled with -fPIC flag.
 # This causes linking errors when building SYCL runtime.
