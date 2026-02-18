@@ -62,7 +62,7 @@ jobs:
       build_cache_root: "/__w/"
       build_cache_suffix: "default"
       # Docker image has last nightly pre-installed and added to the PATH
-      build_image: "ghcr.io/luszczewskakasia1/llvm/sycl_ubuntu2404_nightly:latest"
+      build_image: "ghcr.io/luszczewskakasia1/llvm/nightly:latest"
       cc: clang
       cxx: clang++
       changes: ${{ needs.detect_changes.outputs.filters }}
@@ -83,7 +83,7 @@ jobs:
     runs-on: [Linux, build]
     needs: [build]
     container:
-      image: ghcr.io/luszczewskakasia1/llvm/sycl_ubuntu2404_nightly:latest
+      image: ghcr.io/luszczewskakasia1/llvm/nightly:latest
       options: -u 1001:1001
     steps:
       - uses: actions/checkout@v6
