@@ -53,10 +53,10 @@ jobs:
           #   file: ubuntu2204_build
           #   tag: latest
           #   build_args: ""
-          - name: Build Ubuntu 24.04 Docker image
-            file: ubuntu2404_build
-            tag: latest
-            build_args: ""
+          # - name: Build Ubuntu 24.04 Docker image
+          #   file: ubuntu2404_build
+          #   tag: latest
+          #   build_args: ""
           - name: Build Ubuntu 24.04 Docker image with CUDA 13.1
             file: ubuntu2404_build
             tag: latest
