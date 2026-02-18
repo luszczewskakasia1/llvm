@@ -41,7 +41,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: Base Ubuntu 22.04 Docker image
+          # - name: Base Ubuntu 22.04 Docker image
             # file: ubuntu2204_base
             # tag: latest
             # build_args: ""
