@@ -9,14 +9,13 @@ COPY scripts/install_build_tools.sh /install.sh
 RUN /install.sh
 
 # Install CUDA 13.1 toolkit
-RUN curl -LO https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-ubuntu2404.pin && \
-    mv cuda-ubuntu2404.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
-    curl -LO https://developer.download.nvidia.com/compute/cuda/13.1.1/local_installers/cuda-repo-ubuntu2404-13-1-local_13.1.1-590.48.01-1_amd64.deb && \
-    dpkg -i cuda-repo-ubuntu2404-13-1-local_13.1.1-590.48.01-1_amd64.deb && \
-    cp /var/cuda-repo-ubuntu2404-13-1-local/cuda-*-keyring.gpg /usr/share/keyrings/ && \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates curl gnupg && \
+    curl -fsSL "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb" -o /tmp/cuda-keyring.deb && \
+    dpkg -i /tmp/cuda-keyring.deb && \
     apt-get update && \
-    apt-get -y install cuda-toolkit-13-1 && \
-    rm cuda-repo-ubuntu2404-13-1-local_13.1.1-590.48.01-1_amd64.deb && \
+    apt-get install -y --no-install-recommends cuda-toolkit-13-1 && \
+    rm -f /tmp/cuda-keyring.deb && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
