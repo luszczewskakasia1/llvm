@@ -9,21 +9,8 @@ COPY scripts/install_build_tools.sh /install.sh
 RUN /install.sh
 
 # Install CUDA 13.1 toolkit
-RUN repo_url="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64" && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates curl gnupg sed && \
-    escaped_repo_url="$(printf '%s\n' "${repo_url}" | sed 's/[\/&]/\\&/g')" && \
-    for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do \
-      [[ -e "$f" ]] || continue; \
-      if grep -Fq "${repo_url}" "$f"; then \
-        sed -i "/${escaped_repo_url}/d" "$f"; \
-      fi; \
-    done && \
-    curl -fsSL "${repo_url}/cuda-keyring_1.1-1_all.deb" -o /tmp/cuda-keyring.deb && \
-    dpkg -i /tmp/cuda-keyring.deb && \
-    apt-get update && \
+RUN apt-get update && \
     apt-get install -y --no-install-recommends cuda-toolkit-13-1 && \
-    rm -f /tmp/cuda-keyring.deb && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
