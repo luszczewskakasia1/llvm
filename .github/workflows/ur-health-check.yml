@@ -4,6 +4,8 @@
 name: UR Health Monitoring
 
 on:
+  push:
+    branches: luszczewskakasia1_monitoring
   workflow_call:
     inputs:
       runner_name:
@@ -16,8 +18,8 @@ permissions: read-all
 
 jobs:
   health-check:
-    if: github.event_name == 'workflow_call'
-    runs-on: ${{inputs.runner_name}}
+    # if: github.event_name == 'workflow_call'
+    runs-on: self-hosted  # ${{ inputs.runner_name }}
     steps:
       - name: Check load average
         id: check
@@ -36,11 +38,13 @@ jobs:
       - name: Upload load average artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: ${{ DATE }}_${{ runner.name }}_load-average
-          path: artifacts/${{ DATE }}_${{ runner.name }}.txt
+          name: ${{ env.DATE }}_${{ runner.name }}_load-average
+          path: artifacts/${{ env.DATE }}_${{ runner.name }}.txt
 
   aggregate-load-data:
-    if: github.event_name == 'schedule'
+    # if: github.event_name == 'schedule'
+    # YESTERDAY=$(date -d "yesterday" +'%Y-%m-%d')
+    needs: health-check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -49,7 +53,7 @@ jobs:
       - name: Calculate yesterday's date
         id: date
         run: |
-          YESTERDAY=$(date -d "yesterday" +'%Y-%m-%d')
+          YESTERDAY=$(date +'%Y-%m-%d')
           echo "YESTERDAY=$YESTERDAY" >> $GITHUB_ENV
           echo "YESTERDAY=$YESTERDAY" >> $GITHUB_OUTPUT
           echo "Date for artifact search: $YESTERDAY"
@@ -84,7 +88,7 @@ jobs:
         run: |
           echo "Processing artifacts from $YESTERDAY"
           ls -laR artifacts/
-          echo "{" > aggregated_$YESTERDAY.json
+          echo "{" > aggregated_${YESTERDAY}.json
           first_data=true
 
           for artifact_dir in artifacts/*/; do
@@ -94,23 +98,23 @@ jobs:
                 load=$(cat "$file" | xargs)
                 
                 if [ "$first_data" = true ]; then
-                  echo "  \"$filename\": \"$load\"" >> aggregated_$YESTERDAY.json
+                  echo "  \"$filename\": \"$load\"" >> aggregated_${YESTERDAY}.json
                   first_data=false
                 else
-                  echo ",  \"$filename\": \"$load\"" >> aggregated_$YESTERDAY.json
+                  echo ",  \"$filename\": \"$load\"" >> aggregated_${YESTERDAY}.json
                 fi
               fi 
             done
           done
 
-          echo "}" >> aggregated_$YESTERDAY.json
+          echo "}" >> aggregated_${YESTERDAY}.json
           
-          cat aggregated_$YESTERDAY.json
+          cat aggregated_${YESTERDAY}.json
 
       - name: Check if data exists
         id: check_data
         run: |
-          content=$(cat aggregated_$YESTERDAY.json | tr -d ' \n')
+          content=$(cat aggregated_${YESTERDAY}.json | tr -d ' \n')
           if [ "$content" = "{}" ]; then
             echo "has_data=false" >> $GITHUB_OUTPUT
             echo "No data found, skipping artifact upload"
@@ -123,5 +127,5 @@ jobs:
         if: steps.check_data.outputs.has_data == 'true'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: aggregated_data_$YESTERDAY
-          path: aggregated_$YESTERDAY.json
+          name: aggregated_data_${{ env.YESTERDAY }}
+          path: aggregated_${{ env.YESTERDAY }}.json
