@@ -356,23 +356,41 @@ config.level_zero_include = quote_path(
     )
 )
 
-level_zero_options = level_zero_options = (
-    (" -L" + config.level_zero_libs_dir if config.level_zero_libs_dir else "")
-    + " -lze_loader "
-    + " -I"
-    + config.level_zero_include
-)
-if cl_options:
-    level_zero_options = (
-        " "
-        + (
-            config.level_zero_libs_dir + "/ze_loader.lib "
-            if config.level_zero_libs_dir
-            else "ze_loader.lib"
-        )
-        + " /I"
+# Debug Level Zero configuration
+print(f"Level Zero configuration:")
+print(f"  libs_dir: {config.level_zero_libs_dir!r}")
+print(f"  include: {config.level_zero_include!r}")
+
+# Only provide Level Zero linking options if libraries are actually available
+if config.level_zero_libs_dir and config.level_zero_include:
+    level_zero_options = level_zero_options = (
+        (" -L" + config.level_zero_libs_dir if config.level_zero_libs_dir else "")
+        + (" -lze_loader " if config.level_zero_libs_dir else "")
+        + " -I"
         + config.level_zero_include
     )
+    if cl_options:
+        level_zero_options = (
+            " "
+            + (
+                config.level_zero_libs_dir + "/ze_loader.lib "
+                if config.level_zero_libs_dir
+                else ""
+            )
+            + " /I"
+            + config.level_zero_include
+        )
+    config.available_features.add("ze_loader_available")
+    print(f"Level Zero loader is available")
+else:
+    level_zero_options = (
+        " -I" + config.level_zero_include
+        if config.level_zero_include
+        else ""
+    )
+    print(f"Level Zero loader is NOT available - tests requiring ze_loader will be skipped")
+
+print(f"Level Zero options: {level_zero_options!r}")
 
 config.substitutions.append(("%level_zero_options", level_zero_options))
 

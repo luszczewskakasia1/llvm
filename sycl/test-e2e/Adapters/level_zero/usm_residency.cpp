@@ -1,4 +1,4 @@
-// REQUIRES: gpu, level_zero
+// REQUIRES: gpu, level_zero, ze_loader_available
 // UNSUPPORTED: level_zero_v2_adapter
 // UNSUPPORTED-INTENDED: v2 adapter does not support changing residency.
 

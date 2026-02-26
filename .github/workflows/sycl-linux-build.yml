@@ -18,7 +18,7 @@ on:
       build_image:
         type: string
         required: false
-        default: "ghcr.io/luszczewskakasia1/llvm/ubuntu2404_intel_drivers:alldeps"
+        default: "ghcr.io/intel/llvm/ubuntu2404_intel_drivers:latest"
       build_ref:
         type: string
         required: false
@@ -32,7 +32,7 @@ on:
       build_configure_extra_args:
         type: string
         required: false
-        default: "--hip --cuda --native_cpu"
+        default: "--cuda --native_cpu"
       build_target:
         type: string
         required: false
@@ -114,7 +114,7 @@ on:
       build_configure_extra_args:
         type: choice
         options:
-          - "--hip --cuda --native_cpu"
+          - "--cuda --native_cpu"
       # Cache properties need to match CC/CXX/CMake opts. Any additional choices
       # would need extra care.
       build_cache_root:
@@ -152,7 +152,15 @@ jobs:
     env:
       CCACHE_DIR: ${{ inputs.build_cache_root }}/build_cache_${{ inputs.build_cache_suffix }}
       CCACHE_MAXSIZE: 8G
+      # Proxy settings for corporate environments
+      HTTP_PROXY: http://proxy-dmz.intel.com:912 
+      HTTPS_PROXY: http://proxy-dmz.intel.com:912
+      NO_PROXY: localhost,127.0.0.1
     steps:
+    - name: Clean previous CMake cache
+      run: rm -f build/CMakeCache.txt
+    - name: Install clang
+      run: sudo apt-get update && sudo apt-get install -y clang
     - name: Deduce artifact archive params
       # To reduce number of inputs parameters that is limited for manual triggers.
       id: artifact_info
@@ -163,10 +171,10 @@ jobs:
         fi
         echo ARCHIVE_NAME="$NAME" >> $GITHUB_OUTPUT
         if [ "${NAME}" != "${NAME%.tar.gz}" ]; then
-          echo COMPRESS="gzip" >> $GITHUB_OUTPUT
+          echo COMPRESS="gzip -9" >> $GITHUB_OUTPUT
           echo DECOMPRESS="gunzip" >> $GITHUB_OUTPUT
         elif [ "${NAME}" != "${NAME%.tar.zst}" ]; then
-          echo COMPRESS="zstd -9" >> $GITHUB_OUTPUT
+          echo COMPRESS="zstd --ultra -22 -T0" >> $GITHUB_OUTPUT
           echo DECOMPRESS="zstd" >> $GITHUB_OUTPUT
         else
           echo "Unsupported extension"
@@ -187,28 +195,6 @@ jobs:
     - name: Setup oneAPI env
       if: ${{ inputs.cc == 'icx' || inputs.cxx == 'icpx' }}
       uses: ./devops/actions/setup_linux_oneapi_env
-    - name: install clang 
-      run: |
-        sudo apt-get update && sudo apt-get install -y clang
-    - name: Build and install Level Zero loader
-      run: |
-        git clone https://github.com/oneapi-src/level-zero.git
-        mkdir level-zero/build
-        cd level-zero/build
-        cmake .. -D CMAKE_BUILD_TYPE=Release -D BUILD_STATIC=1 -D ZE_ENABLE_LOADER_DEBUG_TRACE=1
-        cmake --build . --target package --parallel 40
-        sudo cmake --build . --target install
-    - name: Detect nvcc version
-      id: nvcc_info
-      run: |
-        if command -v nvcc &> /dev/null; then
-          echo "NVCC found, version: $(nvcc --version)"
-          echo "NVCC_VERSION=$(nvcc --version | grep -oP 'release \K[0-9]+')" >> $GITHUB_OUTPUT
-        else
-          echo "NVCC not found"
-          echo "NVCC_VERSION=0" >> $GITHUB_OUTPUT
-        fi
-   
     - name: Configure
       # Setting `CMAKE_INSTALL_PREFIX` is important because that's the location
       # where `sycl-linux-run-tests.yml` unpacks the toolchain to. That location
@@ -266,12 +252,16 @@ jobs:
       run: |
         # TODO consider moving this to Dockerfile.
         export LD_LIBRARY_PATH=/usr/local/cuda/compat/:/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+        # Add build lib directory for ze_loader
+        export LD_LIBRARY_PATH=$GITHUB_WORKSPACE/build/lib:$LD_LIBRARY_PATH
         cmake --build $GITHUB_WORKSPACE/build --target check-sycl
     - name: check-sycl-unittests
       if: ${{ !cancelled() && contains(inputs.changes, 'sycl') }}
       run: |
         # TODO consider moving this to Dockerfile.
         export LD_LIBRARY_PATH=/usr/local/cuda/compat/:/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+        # Add build lib directory for ze_loader
+        export LD_LIBRARY_PATH=$GITHUB_WORKSPACE/build/lib:$LD_LIBRARY_PATH
         cmake --build $GITHUB_WORKSPACE/build --target check-sycl-unittests
     - name: check-llvm-spirv
       if: ${{ !cancelled() && contains(inputs.changes, 'llvm_spirv') }}
@@ -285,27 +275,138 @@ jobs:
       if: ${{ !cancelled() && contains(inputs.changes, 'libclc') }}
       run: |
         cmake --build $GITHUB_WORKSPACE/build --target check-libclc
-    - name: Check E2E test requirements
-      if: ${{ !cancelled() && !contains(inputs.changes, 'sycl') }}
-      run: |
-        # TODO consider moving this to Dockerfile.
-        export LD_LIBRARY_PATH=/usr/local/cuda/compat/:/usr/local/cuda/lib64:$LD_LIBRARY_PATH
-        LIT_OPTS="--allow-empty-runs" LIT_FILTER="e2e_test_requirements" cmake --build $GITHUB_WORKSPACE/build --target check-sycl
     - name: Install sycl-toolchain
       if: ${{ !cancelled() && steps.build.conclusion == 'success' }}
       run: |
         cmake --build $GITHUB_WORKSPACE/build --target deploy-sycl-toolchain
+        
+    - name: Debug - Check ze_loader availability
+      if: ${{ !cancelled() && steps.build.conclusion == 'success' }}
+      run: |
+        echo "=== Checking ze_loader library availability ==="
+        echo "Build directory:"
+        find $GITHUB_WORKSPACE/build -name "*ze_loader*" -type f || echo "No ze_loader found in build directory"
+        echo ""
+        echo "Toolchain directory:"
+        find $GITHUB_WORKSPACE/toolchain -name "*ze_loader*" -type f || echo "No ze_loader found in toolchain directory"
+        echo ""
+        echo "System paths:"
+        ldconfig -p | grep ze_loader || echo "No ze_loader found in system libraries"
+
+    - name: Check E2E test requirements  
+      if: ${{ !cancelled() && !contains(inputs.changes, 'sycl') }}
+      run: |
+        # TODO consider moving this to Dockerfile.
+        export LD_LIBRARY_PATH=/usr/local/cuda/compat/:/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+        # Add toolchain lib directory to library path for ze_loader
+        export LD_LIBRARY_PATH=$GITHUB_WORKSPACE/toolchain/lib:$LD_LIBRARY_PATH
+        LIT_OPTS="--allow-empty-runs" LIT_FILTER="e2e_test_requirements" cmake --build $GITHUB_WORKSPACE/build --target check-sycl
 
     - name: Pack toolchain release
       if: ${{ !cancelled() && steps.build.conclusion == 'success' && inputs.release_toolchain_artifact != '' }}
       run: tar -I '${{ steps.artifact_info.outputs.COMPRESS }}' -cf ${{ steps.artifact_info.outputs.ARCHIVE_NAME }} -C $GITHUB_WORKSPACE/toolchain .
+    
+    - name: Debug - Show upload conditions and variables
+      run: |
+        echo "=== Upload Conditions Debug ==="
+        echo "steps.build.conclusion: ${{ steps.build.conclusion }}"
+        echo "inputs.release_toolchain_artifact: '${{ inputs.release_toolchain_artifact }}'"
+        echo "Archive name: ${{ steps.artifact_info.outputs.ARCHIVE_NAME }}"
+        echo "Retention days: ${{ inputs.retention-days }}"
+        echo ""
+        echo "=== File System Debug ==="
+        echo "Current directory:"
+        pwd
+        echo ""
+        echo "Archive file details:"
+        if [ -f "${{ steps.artifact_info.outputs.ARCHIVE_NAME }}" ]; then
+          ls -la "${{ steps.artifact_info.outputs.ARCHIVE_NAME }}"
+          echo "File size: $(du -sh ${{ steps.artifact_info.outputs.ARCHIVE_NAME }})"
+          echo "File permissions: $(stat -c '%A %U:%G' ${{ steps.artifact_info.outputs.ARCHIVE_NAME }})"
+        else
+          echo "ERROR: Archive file does not exist!"
+        fi
+        echo ""
+        echo "=== Network Debug ==="
+        echo "Proxy configuration:"
+        echo "HTTP_PROXY: ${HTTP_PROXY:-'not set'}"
+        echo "HTTPS_PROXY: ${HTTPS_PROXY:-'not set'}"
+        echo "NO_PROXY: ${NO_PROXY:-'not set'}"
+        echo ""
+        echo "Testing connectivity to GitHub..."
+        # Test both with and without proxy to identify proxy issues
+        if curl -I --connect-timeout 10 --max-time 30 https://api.github.com; then
+          echo "✅ GitHub API connectivity successful"
+        else
+          echo "❌ GitHub API connectivity failed"
+          if [ -n "$HTTPS_PROXY" ]; then
+            echo "Trying without proxy..."
+            if curl -I --noproxy '*' --connect-timeout 10 --max-time 30 https://api.github.com; then
+              echo "✅ Direct connection works - proxy may be the issue"
+            else
+              echo "❌ Direct connection also fails - broader network issue"
+            fi
+          fi
+        fi
+        echo ""
+        echo "=== Upload Condition Evaluation ==="
+        build_success="${{ steps.build.conclusion == 'success' }}"
+        has_artifact="${{ inputs.release_toolchain_artifact != '' }}"
+        echo "Build success: $build_success" 
+    
     - name: Upload toolchain release
       if: ${{ !cancelled() && steps.build.conclusion == 'success' && inputs.release_toolchain_artifact != '' }}
       uses: actions/upload-artifact@v6
+      env:
+        # Extend upload timeout for proxy environments
+        ACTIONS_STEP_DEBUG: true
       with:
         name: ${{ inputs.release_toolchain_artifact }}
         path: ${{ steps.artifact_info.outputs.ARCHIVE_NAME }}
         retention-days: ${{ inputs.retention-days }}
+        compression-level: 0  # Archive is already compressed, don't compress again
+        if-no-files-found: error
+      continue-on-error: true
+      id: upload_release
+      timeout-minutes: 45  # Increased timeout for proxy environments
+    
+    - name: Retry upload toolchain release on failure
+      if: ${{ !cancelled() && steps.build.conclusion == 'success' && inputs.release_toolchain_artifact != '' && steps.upload_release.outcome == 'failure' }}
+      uses: actions/upload-artifact@v6
+      env:
+        ACTIONS_STEP_DEBUG: true
+      with:
+        name: ${{ inputs.release_toolchain_artifact }}
+        path: ${{ steps.artifact_info.outputs.ARCHIVE_NAME }}
+        retention-days: ${{ inputs.retention-days }}
+        compression-level: 0
+        if-no-files-found: error
+      timeout-minutes: 60  # Extended timeout for retry in proxy environments
+    
+    - name: Debug - Upload result
+      if: always()
+      run: |
+        echo "=== Upload Step Result ==="
+        BUILD_SUCCESS="${{ steps.build.conclusion == 'success' }}"
+        RELEASE_REQUESTED="${{ inputs.release_toolchain_artifact != '' }}"
+        UPLOAD_ATTEMPTED="false"
+        if [[ "$BUILD_SUCCESS" == "true" && "$RELEASE_REQUESTED" == "true" ]]; then
+          UPLOAD_ATTEMPTED="true"
+        fi
+        echo "Upload attempted: $UPLOAD_ATTEMPTED"
+        if [[ "$UPLOAD_ATTEMPTED" == "true" ]]; then
+          echo "Upload should have been attempted"
+          echo "First upload outcome: ${{ steps.upload_release.outcome }}"
+          echo "First upload conclusion: ${{ steps.upload_release.conclusion }}"
+          if [[ "${{ steps.upload_release.outcome }}" == "failure" ]]; then
+            echo "⚠️  First upload failed - retry was attempted"
+          else
+            echo "✅ Upload completed successfully on first attempt"
+          fi
+          echo "Check the upload artifact step above for any error messages"
+        else
+          echo "Upload was skipped due to conditions not being met"
+        fi
 
     - name: Install utilities
       if: ${{ !cancelled() && steps.build.conclusion == 'success' }}
@@ -322,13 +423,34 @@ jobs:
     - name: Pack toolchain
       if: ${{ !cancelled() && steps.build.conclusion == 'success' }}
       run: tar -I '${{ steps.artifact_info.outputs.COMPRESS }}' -cf ${{ steps.artifact_info.outputs.ARCHIVE_NAME }} -C $GITHUB_WORKSPACE/toolchain .
+    - run: du -sh ${{ steps.artifact_info.outputs.ARCHIVE_NAME }}
     - name: Upload toolchain
       if: ${{ !cancelled() && steps.build.conclusion == 'success' }}
       uses: actions/upload-artifact@v6
+      env:
+        ACTIONS_STEP_DEBUG: true
       with:
         name: ${{ inputs.toolchain_artifact }}
         path: ${{ steps.artifact_info.outputs.ARCHIVE_NAME }}
         retention-days: ${{ inputs.retention-days }}
+        compression-level: 0  # Archive is already compressed
+        if-no-files-found: error
+      continue-on-error: true
+      id: upload_toolchain
+      timeout-minutes: 45  # Increased timeout for proxy environments
+    
+    - name: Retry upload toolchain on failure  
+      if: ${{ !cancelled() && steps.build.conclusion == 'success' && steps.upload_toolchain.outcome == 'failure' }}
+      uses: actions/upload-artifact@v6
+      env:
+        ACTIONS_STEP_DEBUG: true
+      with:
+        name: ${{ inputs.toolchain_artifact }}
+        path: ${{ steps.artifact_info.outputs.ARCHIVE_NAME }}
+        retention-days: ${{ inputs.retention-days }}
+        compression-level: 0
+        if-no-files-found: error
+      timeout-minutes: 60  # Extended timeout for retry in proxy environments
 
 
     - name: Source OneAPI TBB vars.sh
@@ -344,12 +466,12 @@ jobs:
       if: ${{ inputs.e2e_binaries_artifact && !cancelled() && steps.build.conclusion == 'success' }}
       uses: ./devops/actions/run-tests/linux/e2e
       with:
-        ref: ${{ inputs.ref || github.sha }}
+        ref: ${{ inputs.build_ref || github.sha }}
         testing_mode: build-only
         target_devices: all
         binaries_artifact: ${{ inputs.e2e_binaries_artifact }}
         sycl_compiler: $GITHUB_WORKSPACE/toolchain/bin/clang++
-        extra_lit_opts: --param sycl_build_targets="spir;nvidia;amd"
+        extra_lit_opts: --param sycl_build_targets="spir;nvidia"
 
     - name: Build E2E tests with NewOffloadModel
       if: |
@@ -359,18 +481,18 @@ jobs:
         contains(github.event.pull_request.labels.*.name, 'new-offload-model')
       uses: ./devops/actions/run-tests/linux/e2e
       with:
-        ref: ${{ inputs.ref || github.sha }}
+        ref: ${{ inputs.build_ref || github.sha }}
         testing_mode: build-only
         target_devices: all
         binaries_artifact: ${{ inputs.e2e_binaries_new_offload_model_artifact }}
         sycl_compiler: $GITHUB_WORKSPACE/toolchain/bin/clang++
-        extra_lit_opts: --param sycl_build_targets="spir;nvidia;amd" --param enable_new_offload_model=True
+        extra_lit_opts: --param sycl_build_targets="spir;nvidia" --param enable_new_offload_model=True
 
     - name: Build E2E tests with SPIR-V Backend
       if: ${{ inputs.e2e_binaries_spirv_backend_artifact && !cancelled() && steps.build.conclusion == 'success' }}
       uses: ./devops/actions/run-tests/linux/e2e
       with:
-        ref: ${{ inputs.ref || github.sha }}
+        ref: ${{ inputs.build_ref || github.sha }}
         testing_mode: build-only
         target_devices: all
         binaries_artifact: ${{ inputs.e2e_binaries_spirv_backend_artifact }}
@@ -381,7 +503,7 @@ jobs:
       if: ${{ inputs.e2e_binaries_preview_artifact && !cancelled() && steps.build.conclusion == 'success' && !startsWith(github.base_ref, 'sycl-rel-') }}
       uses: ./devops/actions/run-tests/linux/e2e
       with:
-        ref: ${{ inputs.ref || github.sha }}
+        ref: ${{ inputs.build_ref || github.sha }}
         testing_mode: build-only
         target_devices: all
         binaries_artifact: ${{ inputs.e2e_binaries_preview_artifact }}

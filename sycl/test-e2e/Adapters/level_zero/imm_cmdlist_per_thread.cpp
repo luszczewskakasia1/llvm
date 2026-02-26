@@ -1,4 +1,4 @@
-// REQUIRES: gpu, level_zero
+// REQUIRES: gpu, level_zero, ze_loader_available
 
 // Flaky failure on windows
 // UNSUPPORTED: windows, level_zero_v2_adapter

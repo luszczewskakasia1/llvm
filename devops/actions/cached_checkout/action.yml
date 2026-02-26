@@ -32,9 +32,13 @@ runs:
       cd ${{ inputs.cache_path }}/${{ inputs.repository }}
       if [ -d ./.git ]; then
         git pull --prune --rebase
+        echo ">>>>>>>>> WPADLO W 1 <<<<<<<<<"
       else
+        echo ">>>>>>>>> WPADLO W 2 <<<<<<<<<"
         git clone https://github.com/${{ inputs.repository }}.git .
         git gc
+        git fetch origin
+        git checkout -B sycl origin/sycl
       fi
   - name: Checkout
     env:

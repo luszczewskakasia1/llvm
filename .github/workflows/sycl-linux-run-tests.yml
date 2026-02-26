@@ -330,7 +330,17 @@ jobs:
           if [ -f /usr/local/lib/igc/IGCTAG.txt ]; then
             cat /usr/local/lib/igc/IGCTAG.txt
           fi
-
+    - name: Check nvcc
+      shell: bash
+      run: nvcc --version
+    - name: Checks
+      run: |
+        ldconfig -p | grep -E 'libnvidia-ml\.so|libcuda\.so' || true
+        mvidia-smi
+    # - name: Install required libraries
+    #   run: |
+    #     sudo apt-get update
+    #     sudo apt-get install -y libvulkan-dev rocm-libs
     - name: Run E2E Tests
       if: inputs.tests_selector == 'e2e'
       uses: ./devops/actions/run-tests/linux/e2e
